@@ -276,6 +276,7 @@ final TextEditingController _nameController = TextEditingController();
 
 class OrderPage extends StatelessWidget {
   @override
+  String selectedBagType = 'School Bag'; // Default එක ලෙස එකක් තෝරා තබමු
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -294,6 +295,33 @@ class OrderPage extends StatelessWidget {
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
               ),
+            ),
+
+            SizedBox(height: 20),
+
+            // බෑග් වර්ගය තෝරාගැනීමට
+            DropdownButtonFormField<String>(
+              value: selectedBagType,
+              decoration: InputDecoration(
+                labelText: "බෑග් වර්ගය තෝරන්න",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.category),
+              ),
+              items:
+                  <String>[
+                    'School Bag',
+                    'Travel Bag',
+                    'Hand Bag',
+                    'Lunch Bag',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+              onChanged: (String? newValue) {
+                selectedBagType = newValue!;
+              },
             ),
 
             SizedBox(height: 20),
@@ -330,7 +358,9 @@ class OrderPage extends StatelessWidget {
                 // ජාත්‍යන්තර ක්‍රමයට අංකය (94 සමඟ)
                 String myNumber = "94742599932";
                 String message =
-                    "Tharu Bag Center - නව ඇණවුමක්!\n\nපාරිභෝගික නම: $name";
+                    "Tharu Bag Center - නව ඇණවුමක්!\n\n"
+                    "පාරිභෝගික නම: $name\n"
+                    "බෑග් වර්ගය: $selectedBagType";
 
                 // WhatsApp පණිවිඩය සඳහා ලින්ක් එක
                 var whatsappUrl =
