@@ -150,6 +150,7 @@
 //   }
 // }
 
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -200,6 +201,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 30),
+
           Text(
             "අපේ බෑග් වර්ග:",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -309,19 +311,45 @@ class OrderPage extends StatelessWidget {
             SizedBox(height: 30),
 
             ElevatedButton(
-              onPressed: () {
-                // පණිවිඩය පෙන්වන කොටස
+              // onPressed: () {
+              //   // පණිවිඩය පෙන්වන කොටස
+              //   String name = _nameController.text;
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     SnackBar(
+              //       content: Text('ස්තූතියි $name, ඔබේ ඇණවුම සාර්ථකව ලැබුණා!'),
+              //       backgroundColor:
+              //           Colors.green, // සාර්ථක පණිවිඩයක් නිසා කොළ පාට යොදමු
+              //       duration: Duration(seconds: 3), // තත්පර 3ක් පෙන්වන්න
+              //       behavior: SnackBarBehavior
+              //           .floating, // තිරයේ පාවෙන ආකාරයට පෙන්වීමට
+              //     ),
+              //   );
+              // },
+              onPressed: () async {
                 String name = _nameController.text;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('ස්තූතියි $name, ඔබේ ඇණවුම සාර්ථකව ලැබුණා!'),
-                    backgroundColor:
-                        Colors.green, // සාර්ථක පණිවිඩයක් නිසා කොළ පාට යොදමු
-                    duration: Duration(seconds: 3), // තත්පර 3ක් පෙන්වන්න
-                    behavior: SnackBarBehavior
-                        .floating, // තිරයේ පාවෙන ආකාරයට පෙන්වීමට
-                  ),
-                );
+                // ජාත්‍යන්තර ක්‍රමයට අංකය (94 සමඟ)
+                String myNumber = "94742599932";
+                String message =
+                    "Tharu Bag Center - නව ඇණවුමක්!\n\nපාරිභෝගික නම: $name";
+
+                // WhatsApp පණිවිඩය සඳහා ලින්ක් එක
+                var whatsappUrl =
+                    "https://wa.me/$myNumber?text=${Uri.encodeComponent(message)}";
+                Uri uri = Uri.parse(whatsappUrl);
+
+                if (name.isNotEmpty) {
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('WhatsApp විවෘත කළ නොහැකි විය')),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('කරුණාකර ඔබේ නම ඇතුළත් කරන්න')),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
