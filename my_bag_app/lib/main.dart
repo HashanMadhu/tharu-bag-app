@@ -275,6 +275,8 @@ class HomePage extends StatelessWidget {
 }
 
 // දෙවැනි පිටුව
+final TextEditingController _nameController = TextEditingController();
+
 class OrderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -283,15 +285,57 @@ class OrderPage extends StatelessWidget {
         title: Text("ඇණවුම් පෝරමය"),
         backgroundColor: Colors.orange,
       ),
-      body: Center(
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assignment, size: 100, color: Colors.orange),
+            // නම ලබා ගැනීමට
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: "ඔබේ නම",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+            ),
+
             SizedBox(height: 20),
-            Text(
-              "මෙහිදී ඔබේ ඇණවුම ලබා දිය හැකිය!",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+            // දුරකථන අංකය ලබා ගැනීමට
+            TextField(
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: "දුරකථන අංකය",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.phone),
+              ),
+            ),
+
+            SizedBox(height: 30),
+
+            ElevatedButton(
+              onPressed: () {
+                // පණිවිඩය පෙන්වන කොටස
+                String name = _nameController.text;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ස්තූතියි $name, ඔබේ ඇණවුම සාර්ථකව ලැබුණා!'),
+                    backgroundColor:
+                        Colors.green, // සාර්ථක පණිවිඩයක් නිසා කොළ පාට යොදමු
+                    duration: Duration(seconds: 3), // තත්පර 3ක් පෙන්වන්න
+                    behavior: SnackBarBehavior
+                        .floating, // තිරයේ පාවෙන ආකාරයට පෙන්වීමට
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                minimumSize: Size(double.infinity, 50),
+              ),
+              child: Text(
+                "තහවුරු කරන්න",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
