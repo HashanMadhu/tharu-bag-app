@@ -191,15 +191,10 @@ class HomePage extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Image.network(
-                  'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=300&q=80',
-                  height: 120,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "THARU BAGS වෙත සාදරයෙන් පිළිගනිමු!",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+                Image.asset(
+                  'assets/bag_logo.png',
+                  height: 200, // පින්තූරයේ උස
+                  width: 200, // පින්තූරයේ පළල
                 ),
               ],
             ),
