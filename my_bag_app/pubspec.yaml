@@ -120,3 +120,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/bag_logo.png
+    - assets/school_bag.png
+    - assets/travel_bag.png
+    - assets/hand_bag.png
+    - assets/lunch_bag.png

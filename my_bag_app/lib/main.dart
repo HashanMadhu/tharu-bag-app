@@ -272,22 +272,61 @@ class HomePage extends StatelessWidget {
 }
 
 // දෙවැනි පිටුව
-final TextEditingController _nameController = TextEditingController();
-
-class OrderPage extends StatelessWidget {
+// මුලින්ම StatefulWidget එක නිර්මාණය කරමු
+class OrderPage extends StatefulWidget {
   @override
-  String selectedBagType = 'School Bag'; // Default එක ලෙස එකක් තෝරා තබමු
+  _OrderPageState createState() => _OrderPageState();
+}
+
+class _OrderPageState extends State<OrderPage> {
+  final TextEditingController _nameController = TextEditingController();
+
+  // 1. පියවර: මෙන්න Logic එක තිබිය යුතු තැන (Variable & Function)
+  String selectedBagType = 'School Bag';
+
+  String getBagImage(String type) {
+    switch (type) {
+      case 'School Bag':
+        return 'assets/school_bag.png';
+      case 'Travel Bag':
+        return 'assets/travel_bag.png';
+      case 'Hand Bag':
+        return 'assets/hand_bag.png';
+      case 'Lunch Bag':
+        return 'assets/lunch_bag.png';
+      default:
+        return 'assets/bag_logo.png';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("ඇණවුම් පෝරමය"),
         backgroundColor: Colors.orange,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        // Screen එක Scroll කිරීමට හැකි වීමට (Keyboard එක ආ විට වැදගත් වේ)
         padding: EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // නම ලබා ගැනීමට
+            // පින්තූරය පෙන්වන තැන
+            Container(
+              height: 200,
+              width: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.orange.shade100),
+              ),
+              child: Image.asset(
+                getBagImage(selectedBagType), // Logic එක මෙතැනට සම්බන්ධ වේ
+                fit: BoxFit.contain,
+              ),
+            ),
+
+            SizedBox(height: 20),
+
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
@@ -299,7 +338,7 @@ class OrderPage extends StatelessWidget {
 
             SizedBox(height: 20),
 
-            // බෑග් වර්ගය තෝරාගැනීමට
+            // Dropdown එක
             DropdownButtonFormField<String>(
               value: selectedBagType,
               decoration: InputDecoration(
@@ -307,26 +346,22 @@ class OrderPage extends StatelessWidget {
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.category),
               ),
-              items:
-                  <String>[
-                    'School Bag',
-                    'Travel Bag',
-                    'Hand Bag',
-                    'Lunch Bag',
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+              items: ['School Bag', 'Travel Bag', 'Hand Bag', 'Lunch Bag']
+                  .map(
+                    (String value) =>
+                        DropdownMenuItem(value: value, child: Text(value)),
+                  )
+                  .toList(),
               onChanged: (String? newValue) {
-                selectedBagType = newValue!;
+                // 2. පියවර: තිරය Refresh කිරීමට setState භාවිතා කිරීම
+                setState(() {
+                  selectedBagType = newValue!;
+                });
               },
             ),
 
             SizedBox(height: 20),
 
-            // දුරකථන අංකය ලබා ගැනීමට
             TextField(
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
@@ -339,30 +374,14 @@ class OrderPage extends StatelessWidget {
             SizedBox(height: 30),
 
             ElevatedButton(
-              // onPressed: () {
-              //   // පණිවිඩය පෙන්වන කොටස
-              //   String name = _nameController.text;
-              //   ScaffoldMessenger.of(context).showSnackBar(
-              //     SnackBar(
-              //       content: Text('ස්තූතියි $name, ඔබේ ඇණවුම සාර්ථකව ලැබුණා!'),
-              //       backgroundColor:
-              //           Colors.green, // සාර්ථක පණිවිඩයක් නිසා කොළ පාට යොදමු
-              //       duration: Duration(seconds: 3), // තත්පර 3ක් පෙන්වන්න
-              //       behavior: SnackBarBehavior
-              //           .floating, // තිරයේ පාවෙන ආකාරයට පෙන්වීමට
-              //     ),
-              //   );
-              // },
               onPressed: () async {
                 String name = _nameController.text;
-                // ජාත්‍යන්තර ක්‍රමයට අංකය (94 සමඟ)
                 String myNumber = "94742599932";
                 String message =
                     "Tharu Bag Center - නව ඇණවුමක්!\n\n"
                     "පාරිභෝගික නම: $name\n"
                     "බෑග් වර්ගය: $selectedBagType";
 
-                // WhatsApp පණිවිඩය සඳහා ලින්ක් එක
                 var whatsappUrl =
                     "https://wa.me/$myNumber?text=${Uri.encodeComponent(message)}";
                 Uri uri = Uri.parse(whatsappUrl);
@@ -370,10 +389,6 @@ class OrderPage extends StatelessWidget {
                 if (name.isNotEmpty) {
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('WhatsApp විවෘත කළ නොහැකි විය')),
-                    );
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
