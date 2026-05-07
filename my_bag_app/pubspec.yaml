@@ -111,6 +111,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.1 # WhatsApp පණිවිඩ යැවීමට අවශ්‍යයි
   flutter_riverpod: ^2.5.1 # State management සඳහා Riverpod එක භාවිතා කිරීමට
+  google_fonts: ^6.2.1  # Google Fonts එක භාවිතා කිරීමට
 
 dev_dependencies:
   flutter_test:
