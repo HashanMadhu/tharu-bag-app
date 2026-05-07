@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart'; // Google Fonts package එක 
 import 'package:my_bag_app/pages/order_page.dart';
 import 'pages/home_page.dart';
 
+
 void main() {
   runApp(
     const ProviderScope(

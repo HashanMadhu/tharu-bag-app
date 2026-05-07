@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'order_page.dart';
 import '../shared/widgets/app_drawer.dart';
+import '../models/bag_model.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key}); // Const constructor එකක් එක් කරන්න
@@ -59,6 +60,8 @@ class HomePage extends StatelessWidget {
                 buildBagIcon(Icons.shopping_bag, Colors.brown),
                 buildBagIcon(Icons.backpack, Colors.blue),
                 buildBagIcon(Icons.work, Colors.green),
+
+                //Body එක ඇතුළත Column එකේ අයිකන තිබුණු තැනට මෙය දමන්න:
               ],
             ),
             const SizedBox(height: 30),
@@ -71,26 +74,89 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const OrderPage()),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     ElevatedButton.icon(
+            //       onPressed: () => Navigator.push(
+            //         context,
+            //         MaterialPageRoute(builder: (context) => const OrderPage()),
+            //       ),
+            //       icon: const Icon(Icons.add_shopping_cart),
+            //       label: const Text("ඇණවුම් කරන්න"),
+            //       style: ElevatedButton.styleFrom(
+            //         padding: const EdgeInsets.symmetric(
+            //           horizontal: 20,
+            //           vertical: 12,
+            //         ),
+            //       ),
+            //     ),
+            //     const SizedBox(width: 20),
+            //     // ඇමතුම් ලබාගැනීම පසුව සැකසිය හැක
+            //   ],
+            // ),
+            // Body එක ඇතුළත Column එකේ අයිකන තිබුණු තැනට මෙය දමන්න:
+            GridView.builder(
+              shrinkWrap: true, // GridView එකේ height එක content එකට අනුව සකසන්න
+              physics:
+                  const NeverScrollableScrollPhysics(), // පිටුව scroll වීමට ඉඩ දීමට
+              padding: const EdgeInsets.all(15),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, // පේළියකට අයිතම 2 බැගින්
+                childAspectRatio: 0.8, // කොටුවල හැඩය
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+              ),
+              itemCount: tharuBags.length,
+              itemBuilder: (context, index) {
+                final bag = tharuBags[index];
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 5,
+                      ),
+                    ],
                   ),
-                  icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text("ඇණවුම් කරන්න"),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(bag.imagePath, height: 80),
+                      const SizedBox(height: 10),
+                      Text(
+                        bag.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "Rs. ${bag.price}",
+                        style: const TextStyle(color: Colors.brown),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OrderPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          minimumSize: const Size(80, 30),
+                        ),
+                        child: const Text(
+                          "Select",
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 20),
-                // ඇමතුම් ලබාගැනීම පසුව සැකසිය හැක
-              ],
+                );
+              },
             ),
             const SizedBox(height: 50),
           ],
