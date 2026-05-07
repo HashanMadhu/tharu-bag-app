@@ -1,12 +1,14 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'order_page.dart';
+import '../shared/widgets/app_drawer.dart'; // AppDrawer එක import කරන්න
 
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("THARU BAGS"), backgroundColor: Colors.blue),
+      drawer: const AppDrawer(), // මේ පේළිය සෑම පිටුවකටම එකතු කරන්න
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
