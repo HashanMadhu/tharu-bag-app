@@ -7,7 +7,11 @@ import '../shared/widgets/app_drawer.dart'; // Drawer එක import කරන්
 
 // StatefulWidget වෙනුවට ConsumerStatefulWidget පාවිච්චි කරමු
 class OrderPage extends ConsumerStatefulWidget {
-  const OrderPage({super.key});
+  // මේ variables දෙක අලුතින් එක් කරන්න
+  final String? selectedBag;
+  final double? price;
+
+  const OrderPage({super.key, this.selectedBag, this.price});
 
   @override
   ConsumerState<OrderPage> createState() => _OrderPageState();
@@ -25,11 +29,24 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   // 3. පාරිභෝගික නම ලබාගන්නා Controller එක
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _bagNameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // පිටතින් එන අගය Riverpod state එකට ලබා දීම
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.selectedBag != null) {
+        ref.read(selectedBagProvider.notifier).state = widget.selectedBag!;
+      }
+    });
+  }
 
   @override
   void dispose() {
     _nameController
         .dispose(); // ඇප් එකේ මෙම පේජ් එක වසා දැමූ විට මතකය (Memory) නිදහස් කිරීමට
+    _bagNameController.dispose(); // තවත් Controller එකක් dispose කරන්න
     super.dispose();
   }
 
@@ -43,7 +60,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         backgroundColor: Colors.brown,
       ),
       drawer: const AppDrawer(), // Drawer එක සෑම පිටුවකටම එකතු කරන්න
-      
       // // මෙන්න මේ කොටස අලුතින් එකතු කරන්න
       // drawer: Drawer(
       //   child: ListView(
@@ -92,7 +108,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
       //           Navigator.pop(context);
       //           Navigator.of(context).popUntil(
       //             (route) => route.isFirst,
-      //           ); // orders page එකට යාමට 
+      //           ); // orders page එකට යාමට
       //         },
       //       ),
 
@@ -115,7 +131,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
       //     ],
       //   ),
       // ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -206,6 +221,8 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        // 1. මුලින්ම Dialog එක පෙන්වන්න
+                        _showSuccessDialog();
                         // සියල්ල නිවැරදි නම් BillPage එකට දත්ත යවමු
                         Navigator.push(
                           context,
@@ -228,6 +245,29 @@ class _OrderPageState extends ConsumerState<OrderPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+  // ... initState එක මෙතැන තිබේ ...
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+        content: const Text(
+          "ඔබේ ඇණවුම සාර්ථකව ලැබුණා!\nඅපි ඉක්මනින්ම ඔබව අමතන්නම්.",
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Dialog එක වසන්න
+              Navigator.pop(context); // ආපසු Home Page එකට යන්න
+            },
+            child: const Text("ස්තූතියි"),
+          ),
+        ],
       ),
     );
   }

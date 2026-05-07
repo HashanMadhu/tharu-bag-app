@@ -97,7 +97,8 @@ class HomePage extends StatelessWidget {
             // ),
             // Body එක ඇතුළත Column එකේ අයිකන තිබුණු තැනට මෙය දමන්න:
             GridView.builder(
-              shrinkWrap: true, // GridView එකේ height එක content එකට අනුව සකසන්න
+              shrinkWrap:
+                  true, // GridView එකේ height එක content එකට අනුව සකසන්න
               physics:
                   const NeverScrollableScrollPhysics(), // පිටුව scroll වීමට ඉඩ දීමට
               padding: const EdgeInsets.all(15),
@@ -140,7 +141,10 @@ class HomePage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OrderPage(),
+                              builder: (context) => OrderPage(
+                                selectedBag: bag.name, // බෑගයේ නම යවනවා
+                                price: bag.price, // මිල යවනවා
+                              ),
                             ),
                           );
                         },
