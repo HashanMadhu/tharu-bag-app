@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod package එක import කිරීම
 
 void main() {
-  runApp(const TharuBagApp());
+  runApp(
+    const ProviderScope( // Riverpod එකේ ProviderScope එකෙන් app එක wrap කිරීම
+      child: TharuBagApp(),
+    ),
+  );
 }
 
 class TharuBagApp extends StatelessWidget {
