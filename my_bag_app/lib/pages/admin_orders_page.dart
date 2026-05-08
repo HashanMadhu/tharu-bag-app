@@ -17,15 +17,16 @@ class AdminOrdersPage extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
       body: orders.isEmpty
-          ? const Center(
-              child: Text("තවමත් ඇණවුම් කිසිවක් ලැබී නැත."),
-            )
+          ? const Center(child: Text("තවමත් ඇණවුම් කිසිවක් ලැබී නැත."))
           : ListView.builder(
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 8,
+                  ),
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -34,7 +35,10 @@ class AdminOrdersPage extends ConsumerWidget {
                     contentPadding: const EdgeInsets.all(15),
                     leading: CircleAvatar(
                       backgroundColor: Colors.brown[100],
-                      child: const Icon(Icons.shopping_basket, color: Colors.brown),
+                      child: const Icon(
+                        Icons.shopping_basket,
+                        color: Colors.brown,
+                      ),
                     ),
                     title: Text(
                       "පාරිභෝගිකයා: ${order['name']}",
@@ -51,11 +55,51 @@ class AdminOrdersPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        // Delete කිරීමට පෙර තහවුරු කරගැනීමට (Confirmation) Dialog එකක් පෙන්වමු
+                        _showDeleteDialog(context, ref, index);
+                      },
+                    ),
                   ),
                 );
               },
             ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("ඇණවුම ඉවත් කරන්නද?"),
+        content: const Text(
+          "මෙම ඇණවුම පද්ධතියෙන් ස්ථිරවම ඉවත් කිරීමට ඔබට අවශ්‍යද?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("නැත"),
+          ),
+          TextButton(
+            onPressed: () {
+              // Provider එක හරහා ඇණවුම ඉවත් කිරීම
+              ref.read(orderProvider.notifier).removeOrder(index);
+              Navigator.pop(context);
+
+              // සාර්ථකව ඉවත් වූ බව පෙන්වීමට
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("ඇණවුම සාර්ථකව ඉවත් කළා")),
+              );
+            },
+            child: const Text(
+              "ඔව්, ඉවත් කරන්න",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
