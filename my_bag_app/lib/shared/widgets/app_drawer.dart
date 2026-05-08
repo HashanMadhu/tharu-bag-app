@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../pages/order_page.dart';
 import '../../pages/home_page.dart';
+import '../../pages/admin_orders_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -45,6 +46,21 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
+
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings, color: Colors.red),
+            title: const Text('Admin Dashboard'),
+            onTap: () {
+              Navigator.pop(context); // මෙනුව වසන්න
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdminOrdersPage(),
+                ),
+              );
+            },
+          ),
+
           ListTile(
             leading: const Icon(Icons.shopping_cart),
             title: const Text('Place Order'),

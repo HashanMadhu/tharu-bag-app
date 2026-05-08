@@ -5,11 +5,15 @@ class BillPage extends StatelessWidget {
   // OrderPage එකෙන් එවන දත්ත ලබා ගැනීමට මෙන්න මේ විචල්‍යයන් (Variables) සාදා ගනිමු
   final String customerName;
   final String bagType;
+  final int contact;
+  final String address;
 
   const BillPage({
     super.key, 
     required this.customerName, 
     required this.bagType,
+    required this.contact,
+    required this.address,
   });
 
   @override
@@ -55,13 +59,29 @@ class BillPage extends StatelessWidget {
                       Text(bagType),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Contact:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(contact.toString()),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Address:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(address),
+                    ],
+                  ),
                   
                   const SizedBox(height: 40),
                   
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context), // නැවත Order Page එකට යාමට
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
-                    child: const Text('Back to Home', style: TextStyle(color: Colors.white)),
+                    child: const Text('Go to Home', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
