@@ -111,7 +111,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.1 # WhatsApp පණිවිඩ යැවීමට අවශ්‍යයි
   flutter_riverpod: ^2.5.1 # State management සඳහා Riverpod එක භාවිතා කිරීමට
-  google_fonts: ^6.2.1  # Google Fonts එක භාවිතා කිරීමට
+  google_fonts: ^6.2.1 # Google Fonts එක භාවිතා කිරීමට
+  pdf: ^3.10.8 # PDF generation සඳහා
+  printing: ^5.11.1 # PDF print කිරීම සඳහා
+  path_provider: ^2.1.2 # PDF ගොනුව තාවකාලික ස්ථානයකට සුරැකුම් සඳහා
+
+  # firebase_core: ^3.1.0 # Firebase මූලික ක්‍රියාකාරකම් සඳහා
+  # cloud_firestore: ^5.0.1 # දත්ත ගබඩා කරන Database එක සඳහා
 
 dev_dependencies:
   flutter_test:

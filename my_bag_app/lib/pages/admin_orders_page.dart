@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/order_provider.dart';
+import '../services/pdf_service.dart';
 
 class AdminOrdersPage extends ConsumerWidget {
   const AdminOrdersPage({super.key});
@@ -55,12 +56,26 @@ class AdminOrdersPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        // Delete කිරීමට පෙර තහවුරු කරගැනීමට (Confirmation) Dialog එකක් පෙන්වමු
-                        _showDeleteDialog(context, ref, index);
-                      },
+                    trailing: Row(
+                      mainAxisSize:
+                          MainAxisSize.min, // Row එක කුඩාවට තබා ගැනීමට
+                      children: [
+                        // 🖨️ Print Button
+                        IconButton(
+                          icon: const Icon(Icons.print, color: Colors.blue),
+                          onPressed: () {
+                            // අපි සාදාගත් PDF function එක මෙතැනදී ක්‍රියාත්මක කරනවා
+                            generateInvoice(order);
+                          },
+                        ),
+                        // 🗑️ Delete Button
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _showDeleteDialog(context, ref, index);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 );
