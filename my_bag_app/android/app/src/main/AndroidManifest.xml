@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" /> // SQLite සඳහා අවශ්‍ය නැත, එය ඇතුළත් කරන්නේ නැත, But need image network for show image through network
+
     <application
         android:label="my_bag_app"
         android:name="${applicationName}"
