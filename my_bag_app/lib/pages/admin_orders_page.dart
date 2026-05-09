@@ -72,7 +72,8 @@ class AdminOrdersPage extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            _showDeleteDialog(context, ref, index);
+                            //_showDeleteDialog(context, ref, index);
+                            _showDeleteDialog(context, ref, order['id']);
                           },
                         ),
                       ],
@@ -84,7 +85,7 @@ class AdminOrdersPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref, int index) {
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, int orderId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -100,7 +101,11 @@ class AdminOrdersPage extends ConsumerWidget {
           TextButton(
             onPressed: () {
               // Provider එක හරහා ඇණවුම ඉවත් කිරීම
-              ref.read(orderProvider.notifier).removeOrder(index);
+              //ref.read(orderProvider.notifier).removeOrder(index);
+              // කලින් තිබුණේ(when not using SQLite): ref.read(orderProvider.notifier).removeOrder(index);
+              // අලුත් ක්‍රමය(when using SQLite):
+              //ref.read(orderProvider.notifier).removeOrder(order['id']);
+              ref.read(orderProvider.notifier).removeOrder(orderId);
               Navigator.pop(context);
 
               // සාර්ථකව ඉවත් වූ බව පෙන්වීමට

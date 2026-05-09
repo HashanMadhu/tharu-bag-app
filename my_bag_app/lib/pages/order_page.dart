@@ -189,53 +189,46 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.brown,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      // 1. මුලින්ම Form එක Validate කරන්න
                       if (_formKey.currentState!.validate()) {
-                        // 1. ඇණවුම් විස්තර Map එකක් ලෙස සකසා ගැනීම
-                        // මෙහිදී ඔබ භාවිතා කරන Controller වල නම් නිවැරදිදැයි බලන්න
-                        final newOrder = {
-                          'name': _nameController.text,
-                          'bagName':
-                              widget.selectedBag ??
-                              selectedBag, // HomePage එකෙන් ආපු නම හෝ Dropdown එකේ නම
-                          'phone': _contactController
-                              .text, // ඔබට දුරකථන අංකයට Controller එකක් ඇතිනම් එය මෙතැනට දමන්න
-                          'address': _addressController
-                              .text, // ලිපිනය සඳහා Controller එකක් ඇතිනම් එය මෙතැනට දමන්න
-                        };
+                        try {
+                          // 2. දත්ත සකසා ගන්න
+                          final newOrder = {
+                            'name': _nameController.text.trim(),
+                            'bagName': widget.selectedBag ?? selectedBag,
+                            'phone': _contactController.text.trim(),
+                            'address': _addressController.text.trim(),
+                          };
 
-                        // 2. Riverpod Provider එක හරහා දත්ත "Memory" එකට ඇතුළත් කිරීම
-                        // (මතක ඇතුව ඉහළින්ම order_provider.dart එක import කරන්න)
-                        ref.read(orderProvider.notifier).addOrder(newOrder);
+                          // 3. SQLite වලට දත්ත යවන්න
+                          await ref
+                              .read(orderProvider.notifier)
+                              .addOrder(newOrder);
 
-                        // 3. මුලින්ම පාරිභෝගිකයාට 'Success Dialog' එක පෙන්වන්න
-                        _showSuccessDialog();
+                          // 4. සාර්ථක නම් Dialog එක පෙන්වන්න
+                          _showSuccessDialog();
 
-                        // 4. (විකල්ප - Optional) ඔබට පාරිභෝගිකයාව Bill Page එකට යැවීමට අවශ්‍ය නම් පමණක් මෙය පාවිච්චි කරන්න.
-                        // නමුත් සාමාන්‍යයෙන් Success Dialog එකේ 'ස්තූතියි' එබූ විට Home එකට යන නිසා මෙය අවශ්‍ය නොවිය හැක.
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BillPage(
-                              customerName: _nameController.text,
-                              bagType: widget.selectedBag ?? selectedBag,
-                              contact: int.parse(
-                                _contactController.text,
-                              ), // දුරකථන අංකය int ලෙස parse කරන්න
-                              address: _addressController.text,
-
-                              //price: widget.price ?? 0.0, // HomePage එකෙන් ආපු මිල
+                          // 5. Bill Page එකට යෑම
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BillPage(
+                                customerName: _nameController.text,
+                                bagType: widget.selectedBag ?? selectedBag,
+                                contact:
+                                    int.tryParse(_contactController.text) ??
+                                    0, // දෝෂ මඟහරවයි
+                                address: _addressController.text,
+                              ),
                             ),
-                          ),
-                        ).then((_) {
-                          // Bill Page එකෙන් ආපසු එන විට මෙය ක්‍රියාත්මක වේ
-                          // ඔබට අවශ්‍ය නම් මෙහිදී කිසියම් ක්‍රියාමාර්ග ගත හැක, උදාහරණයක් ලෙස Order Page එකේ fields හි data clear කිරීම වැනි
-                          _nameController.clear();
-                          _contactController.clear();
-                          _addressController.clear();
-                          ref.read(selectedBagProvider.notifier).state = '';
-                        });
+                          );
+                        } catch (e) {
+                          // යම් දෝෂයක් ආවොත් ටර්මිනල් එකේ පෙන්වයි
+                          print("Error placing order: $e");
+                        }
+                      } else {
+                        print("Form is not valid");
                       }
                     },
                     child: const Text(
