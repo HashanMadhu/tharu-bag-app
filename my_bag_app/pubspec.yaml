@@ -117,6 +117,8 @@ dependencies:
   path_provider: ^2.1.2 # PDF ගොනුව තාවකාලික ස්ථානයකට සුරැකුම් සඳහා
   sqflite: ^2.3.0  # SQLite සඳහා ප්‍රධාන package එක
   path: ^1.9.0     # Database එක පෝන් එකේ තියෙන තැන සොයා ගැනීමට
+  firebase_core: ^4.7.0
+  cloud_firestore: ^6.3.0
 
   # firebase_core: ^3.1.0 # Firebase මූලික ක්‍රියාකාරකම් සඳහා
   # cloud_firestore: ^5.0.1 # දත්ත ගබඩා කරන Database එක සඳහා

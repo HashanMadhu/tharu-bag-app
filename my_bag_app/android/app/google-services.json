@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "309888173927",
+    "project_id": "tharu-bag-center",
+    "storage_bucket": "tharu-bag-center.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309888173927:android:b77a560fc60e8239a511c2",
+        "android_client_info": {
+          "package_name": "com.example.my_bag_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlnHw2Gmj-OFk6y0Su4djVhwZ8tqEjvPs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
