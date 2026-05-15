@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_bag_app/pages/login_page.dart';
+import 'package:my_bag_app/services/auth_service.dart';
 import 'order_page.dart';
 import '../shared/widgets/app_drawer.dart';
 import '../models/bag_model.dart';
@@ -11,7 +13,26 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("THARU BAGS")),
+      appBar: AppBar(
+        title: const Text("THARU BAGS"),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await AuthService().signOut();
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              }
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+        backgroundColor: Colors.brown,
+      ),
+
+      // 2. Drawer කොටස (මෙය AppBar එකට පසුව මෙලෙස දැමිය යුතුය)
       drawer: const AppDrawer(),
 
       //For testing to connect to Firebase and upload a category (මෙතැනට FloatingActionButton එකක් එක් කරලා තියෙන්නේ)

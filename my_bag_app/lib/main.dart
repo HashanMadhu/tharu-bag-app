@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod package එක import කිරීම
 import 'package:google_fonts/google_fonts.dart'; // Google Fonts package එක import කිරීම
+import 'package:my_bag_app/pages/login_page.dart';
 import 'package:my_bag_app/pages/order_page.dart';
 import 'pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core package එක import කිරීම
@@ -87,7 +88,7 @@ class TharuBagApp extends StatelessWidget {
           elevation: 2,
         ),
       ),
-      home: const HomePage(),
+      home: const LoginPage(),
     );
   }
 }
