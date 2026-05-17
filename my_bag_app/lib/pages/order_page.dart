@@ -115,8 +115,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                     }
 
                     return DropdownButtonFormField<String>(
-                      isExpanded:
-                          true, // 👈 අනිවාර්යයෙන්ම මේ පේළිය එකතු කරන්න! මේකෙන් මුළු පළලම හරියට බෙදාගන්නවා.
+                      isExpanded: true, // මේකෙන් මුළු පළලම හරියට බෙදාගන්නවා.
                       // 👑 ප්‍රධාන Value එක විදිහට String (බෑග් එකේ නම) විතරක් දෙනවා. එතකොට Error එක එන්නේ නැහැ!
                       value: selectedBagName.isEmpty ? null : selectedBagName,
                       decoration: const InputDecoration(
@@ -127,8 +126,19 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                       items: docs.map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         return DropdownMenuItem<String>(
-                          value: data['name'], // 👈 මෙතනට String එකක් දෙන්න
-                          child: Text("${data['name']} - Rs. ${data['price']}"),
+                          value: data['name'],
+                          // 💡 මෙන්න මේ විදිහට වෙනස් කරන්න හෂාන්:
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Text(
+                              "${data['name']} - Rs. ${data['price']}",
+                              maxLines:
+                                  2, // 👈 ඉඩ මදි වුනොත් පේළි දෙකකට ලස්සනට බෙදෙනවා
+                              overflow: TextOverflow
+                                  .visible, // 👈 මිල කැපිලා තිත් තිත් වැටෙන එක නතර කරනවා
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (String? newBagName) {
