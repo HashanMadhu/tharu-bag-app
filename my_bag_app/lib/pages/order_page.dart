@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Riverpod import කරන්න
-import '../providers/bag_provider.dart'; // 2. අපි හදපු provider එක import කරන්න
-import '../shared/validators/form_validators.dart'; // 3. FormValidators import කරන්න
-import 'bill_page.dart'; // 2. BillPage එක import කරන්න
-import '../shared/widgets/app_drawer.dart'; // Drawer එක import කරන්න
-import '../providers/order_provider.dart'; // 4. OrderProvider එක import කරන්න
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/bag_provider.dart';
+import '../shared/validators/form_validators.dart';
+import 'bill_page.dart';
+import '../shared/widgets/app_drawer.dart';
+import '../providers/order_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// StatefulWidget වෙනුවට ConsumerStatefulWidget පාවිච්චි කරමු
 class OrderPage extends ConsumerStatefulWidget {
-  // මේ variables දෙක අලුතින් එක් කරන්න
   final String? selectedBag;
   final double? price;
 
@@ -19,25 +18,16 @@ class OrderPage extends ConsumerStatefulWidget {
 }
 
 class _OrderPageState extends ConsumerState<OrderPage> {
-  // 3. පාරිභෝගික නම ලබාගන්නා Controller එක
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _bagNameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
-  final List<String> bagTypes = [
-    'School Bag',
-    'Hand Bag',
-    'Travel Bag',
-    'Lunch Bag',
-  ];
-
-  final _formKey = GlobalKey<FormState>(); // Form එකේ තත්ත්වය පරීක්ෂා කිරීමට
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    // පිටතින් එන අගය Riverpod state එකට ලබා දීම
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.selectedBag != null) {
         ref.read(selectedBagProvider.notifier).state = widget.selectedBag!;
@@ -47,51 +37,69 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   @override
   void dispose() {
-    _nameController
-        .dispose(); // ඇප් එකේ මෙම පේජ් එක වසා දැමූ විට මතකය (Memory) නිදහස් කිරීමට
-    _bagNameController.dispose(); // තවත් Controller එකක් dispose කරන්න
-    _contactController.dispose(); // තවත් Controller එකක් dispose කරන්න
-    _addressController.dispose(); // තවත් Controller එකක් dispose කරන්න
+    _nameController.dispose();
+    _bagNameController.dispose();
+    _contactController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedBag = ref.watch(selectedBagProvider);
+    final dbBagsAsync = ref.watch(dbBagTypesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Place Your Order'),
+        title: const Text(
+          'Place Your Order',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.brown,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      drawer: const AppDrawer(), // Drawer එක සෑම පිටුවකටම එකතු කරන්න
+      drawer: const AppDrawer(),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          // 1. Padding එකට පසුව Form එක මෙතැනට දමන්න
-          key: _formKey, // මෙය කලින් පියවරේදී හැදූ GlobalKey එකයි
+          key: _formKey,
           child: SingleChildScrollView(
-            // 2. Scroll කිරීමට මෙය එකතු කරන්න
             child: Column(
               children: [
-                // --- පවතින Dropdown කොටස ---
-                DropdownButtonFormField<String>(
-                  value: selectedBag.isEmpty ? null : selectedBag,
-                  decoration: const InputDecoration(
-                    labelText: 'Select Bag Type',
-                  ),
-                  items: bagTypes
-                      .map(
-                        (bag) => DropdownMenuItem(value: bag, child: Text(bag)),
-                      )
-                      .toList(),
-                  onChanged: (newValue) {
-                    if (newValue != null) {
-                      ref.read(selectedBagProvider.notifier).state = newValue;
+                // --- 🛠️ Dropdown කොටස ---
+                dbBagsAsync.when(
+                  data: (bagTypes) {
+                    if (widget.selectedBag != null &&
+                        !bagTypes.contains(widget.selectedBag)) {
+                      bagTypes.add(widget.selectedBag!);
                     }
+
+                    return DropdownButtonFormField<String>(
+                      value: selectedBag.isEmpty ? null : selectedBag,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Bag Type',
+                      ),
+                      items: bagTypes
+                          .map(
+                            (bag) =>
+                                DropdownMenuItem(value: bag, child: Text(bag)),
+                          )
+                          .toList(),
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          ref.read(selectedBagProvider.notifier).state =
+                              newValue;
+                        }
+                      },
+                    );
                   },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: Colors.brown),
+                  ),
+                  error: (err, stack) => Text('Error loading bags: $err'),
                 ),
+
                 const SizedBox(height: 30),
 
                 if (selectedBag.isNotEmpty)
@@ -105,32 +113,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                 const SizedBox(height: 30),
 
-                // --- පවතින පින්තූර පෙන්වන කොටස (Container) ---
-                // Container(
-                //   height: 200,
-                //   width: double.infinity,
-                //   decoration: BoxDecoration(
-                //     border: Border.all(color: Colors.brown.shade200),
-                //     borderRadius: BorderRadius.circular(10),
-                //   ),
-                //   child: selectedBag.isEmpty
-                //       ? const Center(
-                //           child: Text("Please select a bag to see the image"),
-                //         )
-                //       : ClipRRect(
-                //           borderRadius: BorderRadius.circular(10),
-                //           child: Image.network(
-                //             selectedBag == 'School Bag'
-                //                 ? 'https://m.media-amazon.com/images/I/81+m10G+XhL._AC_SL1500_.jpg'
-                //                 : selectedBag == 'Hand Bag'
-                //                 ? 'https://m.media-amazon.com/images/I/71mJ0u8B+SL._AC_UY1100_.jpg'
-                //                 : 'https://m.media-amazon.com/images/I/71vunL6tG1L._AC_SL1500_.jpg',
-                //             fit: BoxFit.cover,
-                //           ),
-                //         ),
-                // ),
-                // පින්තූර පෙන්වන Container එක මේ විදිහට සකසන්න
-                // --- පවතින පින්තූර පෙන්වන කොටස (Container) ---
+                // --- 🖼️ පින්තූර පෙන්වන කොටස ---
                 Column(
                   children: [
                     Container(
@@ -143,7 +126,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                       child: selectedBag.isEmpty
                           ? const Center(child: Text("Please select a bag"))
                           : Image.network(
-                              // තෝරාගත් බෑග් එක අනුව නිවැරදි පින්තූර ලින්ක් එක තෝරා ගැනීම
                               selectedBag == 'School Bag'
                                   ? 'https://img.freepik.com/free-photo/blue-school-backpack-isolated-white-background_185193-164390.jpg?w=500'
                                   : selectedBag == 'Hand Bag'
@@ -153,10 +135,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                   : selectedBag == 'Lunch Bag'
                                   ? 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=500'
                                   : 'https://via.placeholder.com/500x300?text=No+Image',
-
-                              // ⭐ ඉතාම වැදගත්: මෙම Key එක නිසා selectedBag මාරු වූ සැණින් Image එක Refresh වේ
                               key: ValueKey(selectedBag),
-
                               fit: BoxFit.cover,
                               loadingBuilder: (context, child, progress) {
                                 if (progress == null) return child;
@@ -187,62 +166,62 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                               },
                             ),
                     ),
-                    // Debugging සඳහා selectedBag එකේ නම පෙන්වන්න (පසුව ඉවත් කරමු)
-                    Text("Current Selection: '$selectedBag'"),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Current Selection: '$selectedBag'",
+                      style: const TextStyle(color: Colors.grey),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 30),
 
-                // --- අලුතින් එක් කරන කොටස: Customer Name Field ---
+                // --- 👤 Customer Name Field ---
                 TextFormField(
-                  controller: _nameController, // Controller එක assign කරන්න
+                  controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Customer Name',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.person),
                   ),
-                  validator: FormValidators
-                      .validateName, // FormValidators එකේ validateName function එක භාවිතා කරන්න
+                  validator: FormValidators.validateName,
                 ),
 
                 const SizedBox(height: 20),
 
-                // දුරකථන අංකය සඳහා TextField එක
+                // --- 📞 Mobile Number Field ---
                 TextFormField(
-                  controller:
-                      _contactController, // දුරකථන අංකයට Controller එකක් assign කරන්න
-                  keyboardType: TextInputType
-                      .phone, // අංක ටයිප් කිරීමට පහසු Keyboard එකක් එයි
+                  controller: _contactController,
+                  keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     labelText: 'Mobile Number',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.phone),
                   ),
-                  validator: FormValidators
-                      .validatePhone, // දුරකථන අංකය validate කරන්න
+                  validator: FormValidators.validatePhone,
                 ),
 
                 const SizedBox(height: 20),
 
-                // ලිපිනය සඳහා TextField එක
+                // --- 📍 Delivery Address Field ---
                 TextFormField(
                   controller: _addressController,
-                  maxLines: 2, // පේළි කිහිපයක ලිපිනය ලිවීමට
+                  maxLines: 2,
                   decoration: const InputDecoration(
                     labelText: 'Delivery Address',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.home),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'කරුණාකර ලිපිනය ඇතුළත් කරන්න';
+                    }
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 30),
 
-                // --- අලුතින් එක් කරන කොටස: Confirm Order Button ---
+                // --- 🛒 Confirm Order Button ---
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -251,50 +230,72 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                       backgroundColor: Colors.brown,
                     ),
                     onPressed: () async {
-                      // 1. මුලින්ම Form එක Validate කරන්න
                       if (_formKey.currentState!.validate()) {
                         try {
-                          // 2. දත්ත සකසා ගන්න
-                          final newOrder = {
-                            'name': _nameController.text.trim(),
-                            'bagName': widget.selectedBag ?? selectedBag,
-                            'phone': _contactController.text.trim(),
-                            'address': _addressController.text.trim(),
-                          };
-
-                          // 3. SQLite වලට දත්ත යවන්න
-                          await ref
-                              .read(orderProvider.notifier)
-                              .addOrder(newOrder);
-
-                          // 4. සාර්ථක නම් Dialog එක පෙන්වන්න
-                          _showSuccessDialog();
-
-                          // 5. Bill Page එකට යෑම
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BillPage(
-                                customerName: _nameController.text,
-                                bagType: widget.selectedBag ?? selectedBag,
-                                contact:
-                                    int.tryParse(_contactController.text) ??
-                                    0, // දෝෂ මඟහරවයි
-                                address: _addressController.text,
+                          // 1. Loading Indicator එක පෙන්වීම
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.brown,
                               ),
                             ),
                           );
+
+                          // 2. Firestore එකට යන දත්ත (AdminOrdersPage එකේ Keys වලට ගැළපෙන ලෙස)
+                          final orderData = {
+                            'customerName': _nameController.text.trim(),
+                            'bagType': widget.selectedBag ?? selectedBag,
+                            'contact':
+                                int.tryParse(_contactController.text.trim()) ??
+                                0,
+                            'address': _addressController.text.trim(),
+                            'orderDate': Timestamp.now(),
+                            'status': 'Pending',
+                          };
+
+                          // 3. Cloud Firestore එකට සේව් කිරීම
+                          await FirebaseFirestore.instance
+                              .collection('orders')
+                              .add(orderData);
+
+                          // Loading Dialog එක වසා දැමීම
+                          if (context.mounted) Navigator.pop(context);
+
+                          // 4. Success Dialog එක පෙන්වීම
+                          _showSuccessDialog();
+
+                          // 5. Bill Page එකට Navigate කිරීම
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BillPage(
+                                  customerName: _nameController.text,
+                                  bagType: widget.selectedBag ?? selectedBag,
+                                  contact:
+                                      int.tryParse(_contactController.text) ??
+                                      0,
+                                  address: _addressController.text,
+                                ),
+                              ),
+                            );
+                          }
                         } catch (e) {
-                          // යම් දෝෂයක් ආවොත් ටර්මිනල් එකේ පෙන්වයි
-                          print("Error placing order: $e");
+                          if (context.mounted)
+                            Navigator.pop(context); // Loading එක වහන්න
+                          print("Error saving order: $e");
                         }
-                      } else {
-                        print("Form is not valid");
                       }
                     },
                     child: const Text(
                       'Confirm Order',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -305,7 +306,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
       ),
     );
   }
-  // ... initState එක මෙතැන තිබේ ...
 
   void _showSuccessDialog() {
     showDialog(

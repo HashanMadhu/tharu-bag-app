@@ -1,125 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/order_provider.dart';
-import '../services/pdf_service.dart';
 
 class AdminOrdersPage extends ConsumerWidget {
   const AdminOrdersPage({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Provider එකෙන් Orders ලිස්ට් එක ලබා ගැනීම
-    final orders = ref.watch(orderProvider);
+  // 💡 කෙලින්ම Firestore එකෙන් Role එක ඇඩ්මින්ද කියලා බලන සරල function එකක්
+  Future<bool> _checkIsAdmin() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("ලැබුණු ඇණවුම්"),
-        backgroundColor: Colors.brown,
-        foregroundColor: Colors.white,
-      ),
-      body: orders.isEmpty
-          ? const Center(child: Text("තවමත් ඇණවුම් කිසිවක් ලැබී නැත."))
-          : ListView.builder(
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 8,
-                  ),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(15),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.brown[100],
-                      child: const Icon(
-                        Icons.shopping_basket,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    title: Text(
-                      "පාරිභෝගිකයා: ${order['name']}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("බෑග් වර්ගය: ${order['bagName']}"),
-                          Text("දුරකථනය: ${order['phone']}"),
-                          Text("ලිපිනය: ${order['address']}"),
-                        ],
-                      ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize:
-                          MainAxisSize.min, // Row එක කුඩාවට තබා ගැනීමට
-                      children: [
-                        // 🖨️ Print Button
-                        IconButton(
-                          icon: const Icon(Icons.print, color: Colors.blue),
-                          onPressed: () {
-                            // අපි සාදාගත් PDF function එක මෙතැනදී ක්‍රියාත්මක කරනවා
-                            generateInvoice(order);
-                          },
-                        ),
-                        // 🗑️ Delete Button
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            //_showDeleteDialog(context, ref, index);
-                            _showDeleteDialog(context, ref, order['id']);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-    );
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      return doc.data()!['role'] == 'admin';
+    }
+    return false;
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref, int orderId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("ඇණවුම ඉවත් කරන්නද?"),
-        content: const Text(
-          "මෙම ඇණවුම පද්ධතියෙන් ස්ථිරවම ඉවත් කිරීමට ඔබට අවශ්‍යද?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("නැත"),
-          ),
-          TextButton(
-            onPressed: () {
-              // Provider එක හරහා ඇණවුම ඉවත් කිරීම
-              //ref.read(orderProvider.notifier).removeOrder(index);
-              // කලින් තිබුණේ(when not using SQLite): ref.read(orderProvider.notifier).removeOrder(index);
-              // අලුත් ක්‍රමය(when using SQLite):
-              //ref.read(orderProvider.notifier).removeOrder(order['id']);
-              ref.read(orderProvider.notifier).removeOrder(orderId);
-              Navigator.pop(context);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<bool>(
+      future: _checkIsAdmin(),
+      builder: (context, snapshot) {
+        // 1. Firestore එකෙන් දත්ත එනකම් Loading එකක් පෙන්වනවා
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator(color: Colors.brown)),
+          );
+        }
 
-              // සාර්ථකව ඉවත් වූ බව පෙන්වීමට
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("ඇණවුම සාර්ථකව ඉවත් කළා")),
+        // 2. ඇඩ්මින් කෙනෙක් නෙවෙයි නම් හෝ Error එකක් ආවොත් Access Denied Screen එක පෙන්වනවා
+        if (snapshot.hasError || snapshot.data == false) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Access Denied"), backgroundColor: Colors.red),
+            body: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock, size: 80, color: Colors.red),
+                  SizedBox(height: 15),
+                  Text(
+                    "ඔබට මෙම පිටුව බැලීමට අවසර නැත!",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 3. 👑 ඇඩ්මින් කෙනෙක් කියලා 100% තහවුරු වුණොත් විතරක් ඕඩර්ස් ටික පෙන්වනවා
+        final ordersAsync = ref.watch(orderProvider);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("ලැබුණු ඇණවුම්"),
+            backgroundColor: Colors.brown,
+            foregroundColor: Colors.white,
+          ),
+          body: ordersAsync.when(
+            data: (orders) {
+              if (orders.isEmpty) {
+                return const Center(child: Text("තවමත් ඇණවුම් කිසිවක් ලැබී නැත."));
+              }
+              return ListView.builder(
+                itemCount: orders.length,
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: ListTile(
+                      title: Text(order['customerName'] ?? 'No Name'),
+                      subtitle: Text("මුදල: රු. ${order['totalPrice'] ?? '0'}"),
+                    ),
+                  );
+                },
               );
             },
-            child: const Text(
-              "ඔව්, ඉවත් කරන්න",
-              style: TextStyle(color: Colors.red),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator(color: Colors.brown)),
+            error: (err, stack) => Center(child: Text("දත්ත ලබා ගැනීමේදී දෝෂයක්: $err")),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
