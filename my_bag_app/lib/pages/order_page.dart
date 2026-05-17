@@ -26,6 +26,11 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   final _formKey = GlobalKey<FormState>();
 
+  // 💡 තෝරාගත් බෑගයේ Image URL එක සහ මිල (Price) තබා ගැනීමට ලෝකල් Variables දෙකක්
+  String _currentImageUrl = '';
+  double _currentPrice = 0.0;
+  bool _isInitialLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +39,10 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         ref.read(selectedBagProvider.notifier).state = widget.selectedBag!;
       }
     });
+    // මුලින්ම ආපු මිල ඇතුළත් කරගැනීම
+    if (widget.price != null) {
+      _currentPrice = widget.price!;
+    }
   }
 
   @override
@@ -47,8 +56,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedBag = ref.watch(selectedBagProvider);
-    final dbBagsAsync = ref.watch(dbBagTypesProvider);
+    final selectedBagName = ref.watch(selectedBagProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +68,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -68,147 +75,152 @@ class _OrderPageState extends ConsumerState<OrderPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // --- 🛠️ Dropdown කොටස ---
-                dbBagsAsync.when(
-                  data: (bagTypes) {
-                    if (widget.selectedBag != null &&
-                        !bagTypes.contains(widget.selectedBag)) {
-                      bagTypes.add(widget.selectedBag!);
+                // --- 🛠️ StreamBuilder හරහා Firestore Categories කියවීම ---
+                // --- 🛠️ StreamBuilder හරහා Firestore Categories කියවීම ---
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('categories')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.brown),
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Text('No bags available in store');
+                    }
+
+                    final docs = snapshot.data!.docs;
+
+                    // 💡 මුල්ම වතාවට පේජ් එකට එද්දී HomePage එකෙන් ආපු බෑග් එකේ දත්ත හොයාගැනීම
+                    if (_isInitialLoad && widget.selectedBag != null) {
+                      for (var doc in docs) {
+                        var data = doc.data() as Map<String, dynamic>;
+                        if (data['name'] == widget.selectedBag) {
+                          // ImgBB වෙබ් ලින්ක් එක Direct Image Link එකක් බවට හැරවීම (.jpg එකතු කිරීම)
+                          String rawUrl = data['imageUrl'] ?? '';
+                          _currentImageUrl =
+                              (rawUrl.contains('ibb.co') &&
+                                  !rawUrl.endsWith('.jpg') &&
+                                  !rawUrl.endsWith('.png'))
+                              ? '$rawUrl/image.png'
+                              : rawUrl;
+
+                          _currentPrice = (data['price'] ?? 0.0).toDouble();
+                          break;
+                        }
+                      }
+                      _isInitialLoad = false;
                     }
 
                     return DropdownButtonFormField<String>(
-                      value: selectedBag.isEmpty ? null : selectedBag,
+                      isExpanded:
+                          true, // 👈 අනිවාර්යයෙන්ම මේ පේළිය එකතු කරන්න! මේකෙන් මුළු පළලම හරියට බෙදාගන්නවා.
+                      // 👑 ප්‍රධාන Value එක විදිහට String (බෑග් එකේ නම) විතරක් දෙනවා. එතකොට Error එක එන්නේ නැහැ!
+                      value: selectedBagName.isEmpty ? null : selectedBagName,
                       decoration: const InputDecoration(
                         labelText: 'Select Bag Type',
+                        border: OutlineInputBorder(),
                       ),
-                      items: bagTypes
-                          .map(
-                            (bag) =>
-                                DropdownMenuItem(value: bag, child: Text(bag)),
-                          )
-                          .toList(),
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          ref.read(selectedBagProvider.notifier).state =
-                              newValue;
+                      hint: const Text("Choose a bag"),
+                      items: docs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return DropdownMenuItem<String>(
+                          value: data['name'], // 👈 මෙතනට String එකක් දෙන්න
+                          child: Text("${data['name']} - Rs. ${data['price']}"),
+                        );
+                      }).toList(),
+                      onChanged: (String? newBagName) {
+                        if (newBagName != null) {
+                          // 💡 ලිස්ට් එක ඇතුළෙන් සිලෙක්ට් කරපු බෑග් එකට අදාළ මුළු දත්ත Map එක සොයා ගැනීම
+                          final selectedDoc = docs.firstWhere(
+                            (doc) =>
+                                (doc.data() as Map<String, dynamic>)['name'] ==
+                                newBagName,
+                          );
+                          final selectedData =
+                              selectedDoc.data() as Map<String, dynamic>;
+
+                          setState(() {
+                            // 1. Riverpod state එක update කරනවා
+                            ref.read(selectedBagProvider.notifier).state =
+                                newBagName;
+
+                            // 2. සජීවීව Image URL එක සකසා ගන්නවා
+                            String rawUrl = selectedData['imageUrl'] ?? '';
+                            _currentImageUrl =
+                                (rawUrl.contains('ibb.co') &&
+                                    !rawUrl.endsWith('.jpg') &&
+                                    !rawUrl.endsWith('.png'))
+                                ? '$rawUrl/image.png'
+                                : rawUrl;
+
+                            // 3. මිල Update කරනවා
+                            _currentPrice = (selectedData['price'] ?? 0.0)
+                                .toDouble();
+                          });
                         }
                       },
+                      validator: (value) =>
+                          value == null ? 'Please select a bag type' : null,
                     );
                   },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: Colors.brown),
-                  ),
-                  error: (err, stack) => Text('Error loading bags: $err'),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                if (selectedBag.isNotEmpty)
+                if (selectedBagName.isNotEmpty)
                   Text(
-                    'You selected: $selectedBag',
+                    'You selected: $selectedBagName (Rs. ${_currentPrice.toStringAsFixed(2)})',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Colors.brown,
                     ),
                   ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                // --- 🖼️ පින්තූර පෙන්වන කොටස ---
-                Column(
-                  children: [
-                    // Container(
-                    //   height: 200,
-                    //   width: double.infinity,
-                    //   decoration: BoxDecoration(
-                    //     border: Border.all(color: Colors.brown.shade200),
-                    //     borderRadius: BorderRadius.circular(10),
-                    //   ),
-                    //   child: selectedBag.isEmpty
-                    //       ? const Center(child: Text("Please select a bag"))
-                    //       : Image.network(
-                    //           selectedBag == 'School Bag'
-                    //               ? 'https://img.freepik.com/free-photo/blue-school-backpack-isolated-white-background_185193-164390.jpg?w=500'
-                    //               : selectedBag == 'Hand Bag'
-                    //               ? 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500'
-                    //               : selectedBag == 'Travel Bag'
-                    //               ? 'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=500'
-                    //               : selectedBag == 'Lunch Bag'
-                    //               ? 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=500'
-                    //               : 'https://via.placeholder.com/500x300?text=No+Image',
-                    //           key: ValueKey(selectedBag),
-                    //           fit: BoxFit.cover,
-                    //           loadingBuilder: (context, child, progress) {
-                    //             if (progress == null) return child;
-                    //             return const Center(
-                    //               child: CircularProgressIndicator(
-                    //                 color: Colors.brown,
-                    //               ),
-                    //             );
-                    //           },
-                    //           errorBuilder: (context, error, stackTrace) {
-                    //             return const Center(
-                    //               child: Column(
-                    //                 mainAxisAlignment: MainAxisAlignment.center,
-                    //                 children: [
-                    //                   Icon(
-                    //                     Icons.broken_image,
-                    //                     size: 50,
-                    //                     color: Colors.grey,
-                    //                   ),
-                    //                   SizedBox(height: 8),
-                    //                   Text(
-                    //                     "Check Internet Connection",
-                    //                     style: TextStyle(fontSize: 12),
-                    //                   ),
-                    //                 ],
-                    //               ),
-                    //             );
-                    //           },
-                    //         ),
-                    // ),
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.brown.shade200),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: selectedBag.isEmpty
-                          ? const Center(child: Text("Please select a bag"))
-                          : Image.network(
-                              // 💡 Hardcode කරපු ලින්ක්ස් වෙනුවට කෙලින්ම ඔයා දෙන URL එක පෙන්වනවා:
-                              selectedBag, // 👀 ඔයා Dropdown එකෙන් තෝරන අගය කෙලින්ම URL එකක් නම් මෙතනට 'selectedBag' දෙන්න පුළුවන්
-                              key: ValueKey(selectedBag),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.broken_image,
-                                        size: 50,
-                                        color: Colors.grey,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        "Invalid Image URL / Check Connection",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                // --- 🖼️ පින්තූර සජීවීව පෙන්වන කොටස ---
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.brown.shade200),
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.grey[50],
+                  ),
+                  child: _currentImageUrl.isNotEmpty
+                      ? Image.network(
+                          _currentImageUrl, // 👈 වෙනස් කරන සැනින් පින්තූරය මෙතනින් ලෝඩ් වෙනවා
+                          key: ValueKey(_currentImageUrl),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                    color: Colors.grey,
                                   ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Current Selection: '$selectedBag'",
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "Invalid Image URL / Check Connection",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text("Please select a bag to view image"),
+                        ),
                 ),
+
                 const SizedBox(height: 30),
 
                 // --- 👤 Customer Name Field ---
@@ -279,13 +291,14 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                             ),
                           );
 
-                          // 2. Firestore එකට යන දත්ත (AdminOrdersPage එකේ Keys වලට ගැළපෙන ලෙස)
+                          // 2. Firestore එකට යන දත්ත
                           final orderData = {
                             'customerEmail':
                                 FirebaseAuth.instance.currentUser?.email ??
-                                'No Email', // 👈 මේ පේළිය එකතු කරන්න
+                                'No Email',
                             'customerName': _nameController.text.trim(),
-                            'bagType': widget.selectedBag ?? selectedBag,
+                            'bagType': selectedBagName, // 💡 තෝරාගත් බෑගයේ නම
+                            'price': _currentPrice, // 💡 තෝරාගත් බෑගයේ සැබෑ මිල
                             'contact':
                                 int.tryParse(_contactController.text.trim()) ??
                                 0,
@@ -312,7 +325,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                               MaterialPageRoute(
                                 builder: (context) => BillPage(
                                   customerName: _nameController.text,
-                                  bagType: widget.selectedBag ?? selectedBag,
+                                  bagType: selectedBagName,
                                   contact:
                                       int.tryParse(_contactController.text) ??
                                       0,
@@ -358,7 +371,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Dialog එක වසන්න
+              Navigator.pop(context); // Dialog එක వසන්න
               Navigator.pop(context); // ආපසු Home Page එකට යන්න
             },
             child: const Text("ස්තූතියි"),
