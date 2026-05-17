@@ -7,6 +7,7 @@ import '../providers/order_provider.dart';
 class AdminOrdersPage extends ConsumerWidget {
   const AdminOrdersPage({super.key});
 
+  // 🔐 ඇඩ්මින් කෙනෙක්දැයි පරීක්ෂා කිරීම
   Future<bool> _checkIsAdmin() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
@@ -17,6 +18,62 @@ class AdminOrdersPage extends ConsumerWidget {
         .get();
 
     return doc.exists && doc.data() != null && doc.data()!['role'] == 'admin';
+  }
+
+  // 🔄 1. ඕඩර් එකේ Status එක අප්ඩේට් කරන Function එක
+  Future<void> _updateOrderStatus(String orderId, String newStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('orders').doc(orderId).update(
+        {'status': newStatus},
+      );
+    } catch (e) {
+      print("Error updating status: $e");
+    }
+  }
+
+  // 🗑️ 2. ඕඩර් එක Delete කරන Function එක
+  Future<void> _deleteOrder(BuildContext context, String orderId) async {
+    // මකන්න කලින් ඇඩ්මින්ගෙන් අහන Dialog එක
+    bool confirm =
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("ඇණවුම මකා දැමීම"),
+            content: const Text(
+              "ඔබට මෙම ඇණවුම සම්පූර්ණයෙන්ම මකා දැමීමට අවශ්‍යද?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("නැත", style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("ඔව්", style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (confirm) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('orders')
+            .doc(orderId)
+            .delete();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("ඇණවුම සාර්ථකව මකා දැමුවා!"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        print("Error deleting order: $e");
+      }
+    }
   }
 
   @override
@@ -37,22 +94,14 @@ class AdminOrdersPage extends ConsumerWidget {
               backgroundColor: Colors.red,
             ),
             body: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock, size: 80, color: Colors.red),
-                  SizedBox(height: 15),
-                  Text(
-                    "ඔබට මෙම පිටුව බැලීමට අවසර නැත!",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              child: Text(
+                "ඔබට මෙම පිටුව බැලීමට අවසර නැත!",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           );
         }
 
-        // 👑 ඇඩ්මින් නම් ඕඩර්ස් ලිස්ට් එක පෙන්වීම
         final ordersAsync = ref.watch(orderProvider);
 
         return Scaffold(
@@ -73,8 +122,11 @@ class AdminOrdersPage extends ConsumerWidget {
                 itemCount: orders.length,
                 itemBuilder: (context, index) {
                   final order = orders[index];
+                  final String orderId =
+                      order['id'] ?? ''; // Order Document ID එක
+                  final String currentStatus = order['status'] ?? 'Pending';
 
-                  // 💡 intl පැකේජ් එක නැතුව Flutter වලින්ම දිනය සකසා ගැනීම:
+                  // දිනය සකසා ගැනීම
                   final Timestamp? timestamp = order['orderDate'] as Timestamp?;
                   String formattedDate = 'No Date';
                   if (timestamp != null) {
@@ -97,9 +149,8 @@ class AdminOrdersPage extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // --- 👤 Customer Name & Status ---
+                          // --- 👤 Customer Name & Delete Button ---
                           Row(
-                            // 💡 MainAxisAlignment.between වෙනුවට නිවැරදි වචනය වන spaceBetween යෙදුවා
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
@@ -110,15 +161,13 @@ class AdminOrdersPage extends ConsumerWidget {
                                   color: Colors.brown,
                                 ),
                               ),
-                              Chip(
-                                label: Text(
-                                  order['status'] ?? 'Pending',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
+                              // 🗑️ Delete Option
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
                                 ),
-                                backgroundColor: Colors.orange,
+                                onPressed: () => _deleteOrder(context, orderId),
                               ),
                             ],
                           ),
@@ -196,6 +245,61 @@ class AdminOrdersPage extends ConsumerWidget {
                                   fontSize: 12,
                                   color: Colors.grey,
                                 ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(),
+
+                          // --- 🔄 Status Dropdown Editable Section ---
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "තත්ත්වය වෙනස් කරන්න (Status):",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              DropdownButton<String>(
+                                value:
+                                    [
+                                      'Pending',
+                                      'Processing',
+                                      'Delivered',
+                                    ].contains(currentStatus)
+                                    ? currentStatus
+                                    : 'Pending',
+                                icon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.brown,
+                                ),
+                                underline:
+                                    Container(), // යටින් ඉරක් එන එක වැළැක්වීම
+                                style: const TextStyle(
+                                  color: Colors.brown,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                items:
+                                    <String>[
+                                      'Pending',
+                                      'Processing',
+                                      'Delivered',
+                                    ].map<DropdownMenuItem<String>>((
+                                      String value,
+                                    ) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null &&
+                                      newValue != currentStatus) {
+                                    _updateOrderStatus(orderId, newValue);
+                                  }
+                                },
                               ),
                             ],
                           ),
