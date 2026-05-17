@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -8,7 +7,6 @@ class CustomerOrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 💡 දැනට ලොග් වෙලා ඉන්න කස්ටමර්ගේ Email එක ලබා ගැනීම
     final currentUserEmail = FirebaseAuth.instance.currentUser?.email ?? '';
 
     return Scaffold(
@@ -18,9 +16,7 @@ class CustomerOrdersPage extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.grey[100],
-      // 💡 StreamBuilder එකක් හරහා Firestore එකෙන් මේ කස්ටමර්ගේ ඕඩර්ස් විතරක් සජීවීව කියවීම
       body: StreamBuilder<QuerySnapshot>(
-        // 💡 .orderBy කොටස අයින් කරලා සරල කේතයක් පාවිච්චි කළා (Composite Index Error එක මඟහරවා ගැනීමට)
         stream: FirebaseFirestore.instance
             .collection('orders')
             .where('customerEmail', isEqualTo: currentUserEmail)
@@ -38,15 +34,14 @@ class CustomerOrdersPage extends StatelessWidget {
             );
           }
 
-          // 💡 1. Firestore එකෙන් ආපු Documents ටික ලිස්ට් එකකට ගන්නවා
           final orderDocs = snapshot.data!.docs;
 
-          // 💡 2. අලුත්ම ඕඩර් එක උඩටම එන විදිහට Dart වලින්ම (Locally) Sort කරගන්නවා
+          // අලුත් ඒවා උඩට එන සේ Sort කිරීම
           orderDocs.sort((a, b) {
             final Timestamp? aDate = a['orderDate'] as Timestamp?;
             final Timestamp? bDate = b['orderDate'] as Timestamp?;
             if (aDate == null || bDate == null) return 0;
-            return bDate.compareTo(aDate); // අලුත් ඒවා උඩට (Descending)
+            return bDate.compareTo(aDate);
           });
 
           return ListView.builder(
@@ -55,38 +50,137 @@ class CustomerOrdersPage extends StatelessWidget {
               final order = orderDocs[index].data() as Map<String, dynamic>;
               final String status = order['status'] ?? 'Pending';
 
-              // Status එක අනුව පාට වෙනස් කිරීම
+              // Status එක අනුව පාට තෝරාගැනීම
               Color statusColor = Colors.orange;
               if (status == 'Processing') statusColor = Colors.blue;
               if (status == 'Delivered') statusColor = Colors.green;
 
+              // 💡 දිනය සහ වේලාව සකසා ගැනීම
+              final Timestamp? timestamp = order['orderDate'] as Timestamp?;
+              String formattedDate = 'No Date';
+              if (timestamp != null) {
+                final date = timestamp.toDate();
+                formattedDate =
+                    "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+              }
+
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                elevation: 2,
-                child: ListTile(
-                  leading: Icon(Icons.backpack, color: statusColor, size: 35),
-                  title: Text(
-                    order['bagType'] ?? 'Unknown Bag',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("ලිපිනය: ${order['address'] ?? ''}"),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      status,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- 🎒 Bag Type & Status ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            order['bagType'] ?? 'Unknown Bag',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.brown,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const Divider(),
+                      const SizedBox(height: 5),
+
+                      // --- 📞 Contact Number ---
+                      Row(
+                        children: [
+                          const Icon(Icons.phone, color: Colors.grey, size: 18),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "දුරකථන අංකය: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "0${order['contact'] ?? ''}",
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // --- 📍 Delivery Address ---
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "ලිපිනය: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              order['address'] ?? 'ලිපිනයක් නොමැත',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // --- 📅 Order Date & Time ---
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            color: Colors.grey,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "ඇණවුම් කළ දිනය: ",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            formattedDate,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               );
