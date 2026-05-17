@@ -117,6 +117,56 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                 // --- 🖼️ පින්තූර පෙන්වන කොටස ---
                 Column(
                   children: [
+                    // Container(
+                    //   height: 200,
+                    //   width: double.infinity,
+                    //   decoration: BoxDecoration(
+                    //     border: Border.all(color: Colors.brown.shade200),
+                    //     borderRadius: BorderRadius.circular(10),
+                    //   ),
+                    //   child: selectedBag.isEmpty
+                    //       ? const Center(child: Text("Please select a bag"))
+                    //       : Image.network(
+                    //           selectedBag == 'School Bag'
+                    //               ? 'https://img.freepik.com/free-photo/blue-school-backpack-isolated-white-background_185193-164390.jpg?w=500'
+                    //               : selectedBag == 'Hand Bag'
+                    //               ? 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500'
+                    //               : selectedBag == 'Travel Bag'
+                    //               ? 'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=500'
+                    //               : selectedBag == 'Lunch Bag'
+                    //               ? 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=500'
+                    //               : 'https://via.placeholder.com/500x300?text=No+Image',
+                    //           key: ValueKey(selectedBag),
+                    //           fit: BoxFit.cover,
+                    //           loadingBuilder: (context, child, progress) {
+                    //             if (progress == null) return child;
+                    //             return const Center(
+                    //               child: CircularProgressIndicator(
+                    //                 color: Colors.brown,
+                    //               ),
+                    //             );
+                    //           },
+                    //           errorBuilder: (context, error, stackTrace) {
+                    //             return const Center(
+                    //               child: Column(
+                    //                 mainAxisAlignment: MainAxisAlignment.center,
+                    //                 children: [
+                    //                   Icon(
+                    //                     Icons.broken_image,
+                    //                     size: 50,
+                    //                     color: Colors.grey,
+                    //                   ),
+                    //                   SizedBox(height: 8),
+                    //                   Text(
+                    //                     "Check Internet Connection",
+                    //                     style: TextStyle(fontSize: 12),
+                    //                   ),
+                    //                 ],
+                    //               ),
+                    //             );
+                    //           },
+                    //         ),
+                    // ),
                     Container(
                       height: 200,
                       width: double.infinity,
@@ -127,25 +177,10 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                       child: selectedBag.isEmpty
                           ? const Center(child: Text("Please select a bag"))
                           : Image.network(
-                              selectedBag == 'School Bag'
-                                  ? 'https://img.freepik.com/free-photo/blue-school-backpack-isolated-white-background_185193-164390.jpg?w=500'
-                                  : selectedBag == 'Hand Bag'
-                                  ? 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500'
-                                  : selectedBag == 'Travel Bag'
-                                  ? 'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=500'
-                                  : selectedBag == 'Lunch Bag'
-                                  ? 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=500'
-                                  : 'https://via.placeholder.com/500x300?text=No+Image',
+                              // 💡 Hardcode කරපු ලින්ක්ස් වෙනුවට කෙලින්ම ඔයා දෙන URL එක පෙන්වනවා:
+                              selectedBag, // 👀 ඔයා Dropdown එකෙන් තෝරන අගය කෙලින්ම URL එකක් නම් මෙතනට 'selectedBag' දෙන්න පුළුවන්
                               key: ValueKey(selectedBag),
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.brown,
-                                  ),
-                                );
-                              },
                               errorBuilder: (context, error, stackTrace) {
                                 return const Center(
                                   child: Column(
@@ -158,7 +193,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        "Check Internet Connection",
+                                        "Invalid Image URL / Check Connection",
                                         style: TextStyle(fontSize: 12),
                                       ),
                                     ],

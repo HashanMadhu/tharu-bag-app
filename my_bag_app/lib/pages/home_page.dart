@@ -190,6 +190,32 @@ class _HomePageState extends State<HomePage> {
                                     imageUrl,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
+                                    // ⭐ වැරදි ලින්ක් එකක් ආවොත් ඇප් එක බේරගන්න errorBuilder එකක් දැම්මා:
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: double.infinity,
+                                        color: Colors.grey[100],
+                                        child: const Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.broken_image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              "ලින්ක් එක වැරදියි!",
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   )
                                 : Container(
                                     width: double.infinity,
