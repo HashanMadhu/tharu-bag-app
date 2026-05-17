@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_bag_app/pages/customer_orders_page.dart';
 import '../../pages/order_page.dart';
 import '../../pages/home_page.dart';
 import '../../pages/admin_orders_page.dart';
@@ -74,6 +75,20 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
+          ListTile(
+            leading: const Icon(Icons.list_alt),
+            title: const Text('My Orders'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CustomerOrdersPage(),
+                ),
+              );
+            },
+          ),
+
           // ⭐ FutureBuilder එකක් හරහා ඇඩ්මින් බොත්තම පාලනය කිරීම
           FutureBuilder<bool>(
             future: _checkIsAdmin(),
@@ -87,7 +102,9 @@ class AppDrawer extends StatelessWidget {
                         Icons.admin_panel_settings,
                         color: Colors.brown,
                       ),
-                      title: const Text('ලැබුණු ඇණවුම් (Admin Only)'),
+                      title: const Text(
+                        'ලැබුණු ඇණවුම් (Admin Only)',
+                      ), //Admin only can see this
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
