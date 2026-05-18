@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_bag_app/pages/customer_orders_page.dart';
+// 💡 ඔයාගේ Profile Page එක තියෙන තැන අනුව මේ import එක හරියටම හදාගන්න
+// import 'package:my_bag_app/pages/profile_page.dart';
+// 💡 ඔයාගේ Login Page එක තියෙන තැන අනුව මේ import එක හරියටම හදාගන්න
+// import 'package:my_bag_app/pages/login_page.dart';
+import 'package:my_bag_app/pages/login_page.dart';
+
 import '../../pages/order_page.dart';
 import '../../pages/home_page.dart';
 import '../../pages/admin_orders_page.dart';
@@ -62,6 +68,22 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
+          // ⭐ 1. Profile Button (අලුතින් එකතු කළා)
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('My Profile'),
+            onTap: () {
+              Navigator.pop(context); // Drawer එක වහන්න
+              // 💡 ඔයා Profile Page එක හැදුවාම මෙතන Uncomment කරලා ඒ පිටුවට Navigate කරන්න
+              /*
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+              */
+            },
+          ),
+
           // Place Order Button
           ListTile(
             leading: const Icon(Icons.shopping_cart),
@@ -89,7 +111,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          // ⭐ FutureBuilder එකක් හරහා ඇඩ්මින් බොත්තම පාලනය කිරීම
+          // FutureBuilder එකක් හරහා ඇඩ්මින් බොත්තම පාලනය කිරීම
           FutureBuilder<bool>(
             future: _checkIsAdmin(),
             builder: (context, snapshot) {
@@ -102,9 +124,7 @@ class AppDrawer extends StatelessWidget {
                         Icons.admin_panel_settings,
                         color: Colors.brown,
                       ),
-                      title: const Text(
-                        'ලැබුණු ඇණවුම් (Admin Only)',
-                      ), //Admin only can see this
+                      title: const Text('ලැබුණු ඇණවුම් (Admin Only)'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -118,7 +138,7 @@ class AppDrawer extends StatelessWidget {
                   ],
                 );
               }
-              return const SizedBox.shrink(); // ඇඩ්මින් නෙවෙයි නම් හෝ ලෝඩ් වෙන ගමන් නම් මුකුත් නෑ
+              return const SizedBox.shrink();
             },
           ),
 
@@ -130,6 +150,39 @@ class AppDrawer extends StatelessWidget {
             title: const Text('About Us'),
             onTap: () {
               Navigator.pop(context);
+            },
+          ),
+
+          const Divider(),
+
+          // ⭐ 2. Log Out Button (යාවත්කාලීන කරන ලදී)
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'Log Out',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+            onTap: () async {
+              // 1. ප්‍රථමයෙන් Drawer එක වසා දමන්න
+              Navigator.pop(context);
+
+              try {
+                // 2. Firebase එකෙන් සාර්ථකව Sign Out කිරීම
+                await FirebaseAuth.instance.signOut();
+                print("User successfully logged out from Firebase");
+
+                // 3. 💡 වැදගත්ම කොටස:
+                // Context එක තවමත් Active ද කියලා බලා (Mounted ද කියා බලා),
+                // පැරණි පිටු ඔක්කොම මතකයෙන් අයින් කරලා කෙලින්ම LoginPage එකට සාර්ථකව රැගෙන යාම.
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
+              } catch (e) {
+                print("Error during logout: $e");
+              }
             },
           ),
         ],
