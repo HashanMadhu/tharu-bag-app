@@ -415,9 +415,8 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                       int.tryParse(_contactController.text) ??
                                       0,
                                   address: _addressController.text,
-                                  // 💡 අවශ්‍ය නම් BillPage එකටත් quantity එක පාස් කරන්න පුළුවන්:
-                                  // quantity: _quantity,
-                                  // totalPrice: totalPrice,
+                                  quantity: _quantity,
+                                  totalPrice: totalPrice,
                                 ),
                               ),
                             );
