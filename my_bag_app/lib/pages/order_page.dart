@@ -26,9 +26,9 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   final _formKey = GlobalKey<FormState>();
 
-  // 💡 තෝරාගත් බෑගයේ Image URL එක සහ මිල (Price) තබා ගැනීමට ලෝකල් Variables දෙකක්
   String _currentImageUrl = '';
   double _currentPrice = 0.0;
+  int _quantity = 1; // 💡 බෑග් ප්‍රමාණය තබා ගැනීමට (Default = 1)
   bool _isInitialLoad = true;
 
   @override
@@ -39,7 +39,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         ref.read(selectedBagProvider.notifier).state = widget.selectedBag!;
       }
     });
-    // මුලින්ම ආපු මිල ඇතුළත් කරගැනීම
     if (widget.price != null) {
       _currentPrice = widget.price!;
     }
@@ -57,6 +56,8 @@ class _OrderPageState extends ConsumerState<OrderPage> {
   @override
   Widget build(BuildContext context) {
     final selectedBagName = ref.watch(selectedBagProvider);
+    // 💡 මුළු මුදල ගණනය කිරීම (Price x Quantity)
+    double totalPrice = _currentPrice * _quantity;
 
     return Scaffold(
       appBar: AppBar(
@@ -76,7 +77,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
             child: Column(
               children: [
                 // --- 🛠️ StreamBuilder හරහා Firestore Categories කියවීම ---
-                // --- 🛠️ StreamBuilder හරහා Firestore Categories කියවීම ---
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('categories')
@@ -93,12 +93,10 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                     final docs = snapshot.data!.docs;
 
-                    // 💡 මුල්ම වතාවට පේජ් එකට එද්දී HomePage එකෙන් ආපු බෑග් එකේ දත්ත හොයාගැනීම
                     if (_isInitialLoad && widget.selectedBag != null) {
                       for (var doc in docs) {
                         var data = doc.data() as Map<String, dynamic>;
                         if (data['name'] == widget.selectedBag) {
-                          // ImgBB වෙබ් ලින්ක් එක Direct Image Link එකක් බවට හැරවීම (.jpg එකතු කිරීම)
                           String rawUrl = data['imageUrl'] ?? '';
                           _currentImageUrl =
                               (rawUrl.contains('ibb.co') &&
@@ -106,7 +104,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                   !rawUrl.endsWith('.png'))
                               ? '$rawUrl/image.png'
                               : rawUrl;
-
                           _currentPrice = (data['price'] ?? 0.0).toDouble();
                           break;
                         }
@@ -114,84 +111,170 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                       _isInitialLoad = false;
                     }
 
-                    return DropdownButtonFormField<String>(
-                      isExpanded: true, // මේකෙන් මුළු පළලම හරියට බෙදාගන්නවා.
-                      // 👑 ප්‍රධාන Value එක විදිහට String (බෑග් එකේ නම) විතරක් දෙනවා. එතකොට Error එක එන්නේ නැහැ!
-                      value: selectedBagName.isEmpty ? null : selectedBagName,
-                      decoration: const InputDecoration(
-                        labelText: 'Select Bag Type',
-                        border: OutlineInputBorder(),
-                      ),
-                      hint: const Text("Choose a bag"),
-                      items: docs.map((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        return DropdownMenuItem<String>(
-                          value: data['name'],
-                          // 💡 මෙන්න මේ විදිහට වෙනස් කරන්න හෂාන්:
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Text(
-                              "${data['name']} - Rs. ${data['price']}",
-                              maxLines:
-                                  2, // 👈 ඉඩ මදි වුනොත් පේළි දෙකකට ලස්සනට බෙදෙනවා
-                              overflow: TextOverflow
-                                  .visible, // 👈 මිල කැපිලා තිත් තිත් වැටෙන එක නතර කරනවා
-                              style: const TextStyle(fontSize: 14),
+                    String? selectedDropdownValue;
+                    if (selectedBagName.isNotEmpty &&
+                        docs.any(
+                          (doc) =>
+                              (doc.data() as Map<String, dynamic>)['name'] ==
+                              selectedBagName,
+                        )) {
+                      selectedDropdownValue = selectedBagName;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        top: 16.0,
+                      ), // 👈 උඩින් 16 ක ඉඩක් ලබා දුන්නා, එතකොට ලේබල් එක කැපෙන්නේ නැහැ
+                      child: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        value: selectedDropdownValue,
+                        decoration: const InputDecoration(
+                          labelText: 'Select Bag Type',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text("Choose a bag"),
+                        items: docs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          return DropdownMenuItem<String>(
+                            value: data['name'],
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
+                              child: Text(
+                                "${data['name']} - Rs. ${data['price']}",
+                                maxLines: 2,
+                                overflow: TextOverflow.visible,
+                                style: const TextStyle(fontSize: 14),
+                              ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newBagName) {
-                        if (newBagName != null) {
-                          // 💡 ලිස්ට් එක ඇතුළෙන් සිලෙක්ට් කරපු බෑග් එකට අදාළ මුළු දත්ත Map එක සොයා ගැනීම
-                          final selectedDoc = docs.firstWhere(
-                            (doc) =>
-                                (doc.data() as Map<String, dynamic>)['name'] ==
-                                newBagName,
                           );
-                          final selectedData =
-                              selectedDoc.data() as Map<String, dynamic>;
+                        }).toList(),
+                        onChanged: (String? newBagName) {
+                          if (newBagName != null) {
+                            final selectedDoc = docs.firstWhere(
+                              (doc) =>
+                                  (doc.data()
+                                      as Map<String, dynamic>)['name'] ==
+                                  newBagName,
+                            );
+                            final selectedData =
+                                selectedDoc.data() as Map<String, dynamic>;
 
-                          setState(() {
-                            // 1. Riverpod state එක update කරනවා
-                            ref.read(selectedBagProvider.notifier).state =
-                                newBagName;
-
-                            // 2. සජීවීව Image URL එක සකසා ගන්නවා
-                            String rawUrl = selectedData['imageUrl'] ?? '';
-                            _currentImageUrl =
-                                (rawUrl.contains('ibb.co') &&
-                                    !rawUrl.endsWith('.jpg') &&
-                                    !rawUrl.endsWith('.png'))
-                                ? '$rawUrl/image.png'
-                                : rawUrl;
-
-                            // 3. මිල Update කරනවා
-                            _currentPrice = (selectedData['price'] ?? 0.0)
-                                .toDouble();
-                          });
-                        }
-                      },
-                      validator: (value) =>
-                          value == null ? 'Please select a bag type' : null,
-                    );
+                            setState(() {
+                              ref.read(selectedBagProvider.notifier).state =
+                                  newBagName;
+                              String rawUrl = selectedData['imageUrl'] ?? '';
+                              _currentImageUrl =
+                                  (rawUrl.contains('ibb.co') &&
+                                      !rawUrl.endsWith('.jpg') &&
+                                      !rawUrl.endsWith('.png'))
+                                  ? '$rawUrl/image.png'
+                                  : rawUrl;
+                              _currentPrice = (selectedData['price'] ?? 0.0)
+                                  .toDouble();
+                            });
+                          }
+                        },
+                        validator: (value) =>
+                            value == null ? 'Please select a bag type' : null,
+                      ),
+                    ); // 👈 Padding නිමාව
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                if (selectedBagName.isNotEmpty)
-                  Text(
-                    'You selected: $selectedBagName (Rs. ${_currentPrice.toStringAsFixed(2)})',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown,
+                // --- 🛍️ Quantity (ප්‍රමාණය) තෝරන කොටස ---
+                if (selectedBagName.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Quantity:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // ➖ අඩු කරන බටන් එක
+                          IconButton(
+                            onPressed: _quantity > 1
+                                ? () => setState(() => _quantity--)
+                                : null,
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: Colors.brown,
+                              size: 30,
+                            ),
+                          ),
+                          // 🔢 ප්‍රමාණය පෙන්වන Text එක
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              '$_quantity',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          // ➕ වැඩි කරන බටන් එක
+                          IconButton(
+                            onPressed: () => setState(() => _quantity++),
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              color: Colors.brown,
+                              size: 30,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
+                  // --- 💵 මුළු මුදල (Total Price) පෙන්වන කොටස ---
+                  Card(
+                    color: Colors.brown.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Total Amount:",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "Rs. ${totalPrice.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.brown,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ],
 
                 const SizedBox(height: 20),
 
+                // --- 🖼️ පින්තූර සජීවීව පෙන්වන කොටස ---
                 // --- 🖼️ පින්තූර සජීවීව පෙන්වන කොටස ---
                 Container(
                   height: 200,
@@ -199,29 +282,21 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.brown.shade200),
                     borderRadius: BorderRadius.circular(10),
-                    color: Colors.grey[50],
+                    color: Colors
+                        .grey[50], // 💡 පින්තූරය contain වෙද්දී දෙපැත්තේ ඉතිරි වන ඉඩ මේ background එකෙන් වැහෙයි
                   ),
                   child: _currentImageUrl.isNotEmpty
                       ? Image.network(
-                          _currentImageUrl, // 👈 වෙනස් කරන සැනින් පින්තූරය මෙතනින් ලෝඩ් වෙනවා
+                          _currentImageUrl,
                           key: ValueKey(_currentImageUrl),
-                          fit: BoxFit.cover,
+                          fit: BoxFit
+                              .contain, // 👈 ❌ BoxFit.cover වෙනුවට BoxFit.contain දාන්න
                           errorBuilder: (context, error, stackTrace) {
                             return const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.broken_image,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Invalid Image URL / Check Connection",
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ],
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
                               ),
                             );
                           },
@@ -290,7 +365,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         try {
-                          // 1. Loading Indicator එක පෙන්වීම
                           showDialog(
                             context: context,
                             barrierDismissible: false,
@@ -301,14 +375,18 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                             ),
                           );
 
-                          // 2. Firestore එකට යන දත්ත
+                          // 👑 2. Database (Firestore) එකට යන දත්ත වලට Quantity සහ Total Price එකතු කිරීම
                           final orderData = {
                             'customerEmail':
                                 FirebaseAuth.instance.currentUser?.email ??
                                 'No Email',
                             'customerName': _nameController.text.trim(),
-                            'bagType': selectedBagName, // 💡 තෝරාගත් බෑගයේ නම
-                            'price': _currentPrice, // 💡 තෝරාගත් බෑගයේ සැබෑ මිල
+                            'bagType': selectedBagName,
+                            'price': _currentPrice, // තනි බෑගයක මිල
+                            'quantity':
+                                _quantity, // 👈 දත්ත ගබඩාවට යන බෑග් ප්‍රමාණය
+                            'totalPrice':
+                                totalPrice, // 👈 දත්ත ගබඩාවට යන මුළු මුදල (Price x Quantity)
                             'contact':
                                 int.tryParse(_contactController.text.trim()) ??
                                 0,
@@ -317,18 +395,15 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                             'status': 'Pending',
                           };
 
-                          // 3. Cloud Firestore එකට සේව් කිරීම
                           await FirebaseFirestore.instance
                               .collection('orders')
                               .add(orderData);
 
-                          // Loading Dialog එක වසා දැමීම
-                          if (context.mounted) Navigator.pop(context);
+                          if (context.mounted)
+                            Navigator.pop(context); // Loading close
 
-                          // 4. Success Dialog එක පෙන්වීම
                           _showSuccessDialog();
 
-                          // 5. Bill Page එකට Navigate කිරීම
                           if (context.mounted) {
                             Navigator.push(
                               context,
@@ -340,13 +415,15 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                       int.tryParse(_contactController.text) ??
                                       0,
                                   address: _addressController.text,
+                                  // 💡 අවශ්‍ය නම් BillPage එකටත් quantity එක පාස් කරන්න පුළුවන්:
+                                  // quantity: _quantity,
+                                  // totalPrice: totalPrice,
                                 ),
                               ),
                             );
                           }
                         } catch (e) {
-                          if (context.mounted)
-                            Navigator.pop(context); // Loading එක වහන්න
+                          if (context.mounted) Navigator.pop(context);
                           print("Error saving order: $e");
                         }
                       }
@@ -381,8 +458,8 @@ class _OrderPageState extends ConsumerState<OrderPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Dialog එක వසන්න
-              Navigator.pop(context); // ආපසු Home Page එකට යන්න
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text("ස්තූතියි"),
           ),

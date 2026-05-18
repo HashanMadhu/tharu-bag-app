@@ -33,7 +33,6 @@ class AdminOrdersPage extends ConsumerWidget {
 
   // 🗑️ 2. ඕඩර් එක Delete කරන Function එක
   Future<void> _deleteOrder(BuildContext context, String orderId) async {
-    // මකන්න කලින් ඇඩ්මින්ගෙන් අහන Dialog එක
     bool confirm =
         await showDialog(
           context: context,
@@ -122,9 +121,15 @@ class AdminOrdersPage extends ConsumerWidget {
                 itemCount: orders.length,
                 itemBuilder: (context, index) {
                   final order = orders[index];
-                  final String orderId =
-                      order['id'] ?? ''; // Order Document ID එක
+                  final String orderId = order['id'] ?? '';
                   final String currentStatus = order['status'] ?? 'Pending';
+
+                  // 💡 Firestore එකෙන් අලුත් දත්ත කියවා ගැනීම සහ Fallback යෙදීම
+                  final double price = (order['price'] ?? 0.0).toDouble();
+                  final int quantity =
+                      order['quantity'] ?? 1; // පරණ දත්ත නම් default 1 පෙන්වයි
+                  final double totalPrice =
+                      (order['totalPrice'] ?? (price * quantity)).toDouble();
 
                   // දිනය සකසා ගැනීම
                   final Timestamp? timestamp = order['orderDate'] as Timestamp?;
@@ -161,7 +166,6 @@ class AdminOrdersPage extends ConsumerWidget {
                                   color: Colors.brown,
                                 ),
                               ),
-                              // 🗑️ Delete Option
                               IconButton(
                                 icon: const Icon(
                                   Icons.delete,
@@ -183,11 +187,83 @@ class AdminOrdersPage extends ConsumerWidget {
                                 "ඇණවුම් කළ බෑගය: ",
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
+                              Expanded(
+                                child: Text(
+                                  order['bagType'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    color: Colors.blueAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // --- 🔢 🌟 අලුතින් එකතු කළ කොටස: Quantity & Unit Price ---
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment
+                                .start, // 💡 පේළි 2ක් ආවොත් අයිකන් එක උඩින් තියාගන්න
+                            children: [
+                              const Icon(
+                                Icons.shopping_basket_outlined,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 10),
+                              // 💡 Expanded එකක් ඇතුළේ Text.rich පාවිච්චි කිරීමෙන් Overflow එක සම්පූර්ණයෙන්ම නැති වේ
+                              Expanded(
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: "ප්‍රමාණය (Quantity): ",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: "$quantity",
+                                        style: const TextStyle(
+                                          color: Colors.brown,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text:
+                                            "  (Rs. ${price.toStringAsFixed(2)} බැගින්)",
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight
+                                              .normal, // තද අකුරු නොවන ලෙස
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // --- 💵 🌟 අලුතින් එකතු කළ කොටස: Total Price ---
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.payments_outlined,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                "මුළු මුදල (Total Amount): ",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
-                                order['bagType'] ?? 'Unknown',
+                                "Rs. ${totalPrice.toStringAsFixed(2)}",
                                 style: const TextStyle(
-                                  color: Colors.blueAccent,
+                                  color: Colors.green,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
@@ -275,8 +351,7 @@ class AdminOrdersPage extends ConsumerWidget {
                                   Icons.arrow_drop_down,
                                   color: Colors.brown,
                                 ),
-                                underline:
-                                    Container(), // යටින් ඉරක් එන එක වැළැක්වීම
+                                underline: Container(),
                                 style: const TextStyle(
                                   color: Colors.brown,
                                   fontWeight: FontWeight.bold,

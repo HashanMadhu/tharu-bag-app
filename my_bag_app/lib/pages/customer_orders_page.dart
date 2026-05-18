@@ -50,12 +50,19 @@ class CustomerOrdersPage extends StatelessWidget {
               final order = orderDocs[index].data() as Map<String, dynamic>;
               final String status = order['status'] ?? 'Pending';
 
+              // 💡 Firestore එකෙන් අලුත් දත්ත කියවා ගැනීම සහ Fallback යෙදීම
+              final double price = (order['price'] ?? 0.0).toDouble();
+              final int quantity =
+                  order['quantity'] ?? 1; // පරණ දත්ත නම් default 1 පෙන්වයි
+              final double totalPrice =
+                  (order['totalPrice'] ?? (price * quantity)).toDouble();
+
               // Status එක අනුව පාට තෝරාගැනීම
               Color statusColor = Colors.orange;
               if (status == 'Processing') statusColor = Colors.blue;
               if (status == 'Delivered') statusColor = Colors.green;
 
-              // 💡 දිනය සහ වේලාව සකසා ගැනීම
+              // දිනය සහ වේලාව සකසා ගැනීම
               final Timestamp? timestamp = order['orderDate'] as Timestamp?;
               String formattedDate = 'No Date';
               if (timestamp != null) {
@@ -79,12 +86,16 @@ class CustomerOrdersPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            order['bagType'] ?? 'Unknown Bag',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.brown,
+                          Expanded(
+                            child: Text(
+                              order['bagType'] ?? 'Unknown Bag',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.brown,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Container(
@@ -109,6 +120,69 @@ class CustomerOrdersPage extends StatelessWidget {
                       ),
                       const Divider(),
                       const SizedBox(height: 5),
+
+                      // --- 🔢 🌟 අලුතින් එකතු කළ කොටස: Quantity & Unit Price ---
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.shopping_basket_outlined,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "ප්‍රමාණය (Quantity): ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "$quantity",
+                            style: const TextStyle(
+                              color: Colors.brown,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            "  (Rs. ${price.toStringAsFixed(2)} බැගින්)",
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // --- 💵 🌟 අලුතින් එකතු කළ කොටස: Total Price ---
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.payments_outlined,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "මුළු මුදල (Total Amount): ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "Rs. ${totalPrice.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
 
                       // --- 📞 Contact Number ---
                       Row(
