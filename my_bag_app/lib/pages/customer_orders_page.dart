@@ -7,7 +7,8 @@ class CustomerOrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    // 💡 1. Email වෙනුවට ලොග් වුණු යූසර්ගේ UID එක ලබා ගැනීම
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -17,9 +18,10 @@ class CustomerOrdersPage extends StatelessWidget {
       ),
       backgroundColor: Colors.grey[100],
       body: StreamBuilder<QuerySnapshot>(
+        // 💡 2. Firestore Query එක 'uid' එකෙන් ෆිල්ටර් වන ලෙස වෙනස් කිරීම (Rules වලට ගැලපෙන ලෙස)
         stream: FirebaseFirestore.instance
             .collection('orders')
-            .where('customerEmail', isEqualTo: currentUserEmail)
+            .where('uid', isEqualTo: currentUserId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -50,10 +52,9 @@ class CustomerOrdersPage extends StatelessWidget {
               final order = orderDocs[index].data() as Map<String, dynamic>;
               final String status = order['status'] ?? 'Pending';
 
-              // 💡 Firestore එකෙන් අලුත් දත්ත කියවා ගැනීම සහ Fallback යෙදීම
+              // Firestore එකෙන් අලුත් දත්ත කියවා ගැනීම සහ Fallback යෙදීම
               final double price = (order['price'] ?? 0.0).toDouble();
-              final int quantity =
-                  order['quantity'] ?? 1; // පරණ දත්ත නම් default 1 පෙන්වයි
+              final int quantity = order['quantity'] ?? 1;
               final double totalPrice =
                   (order['totalPrice'] ?? (price * quantity)).toDouble();
 
@@ -77,12 +78,12 @@ class CustomerOrdersPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                // 💡 මෙතන තිබ්බ Duplicate child එක අයින් කරලා කෝඩ් එක පිළිවෙලක් කලා
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- 🎒 Bag Type & Status ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -120,8 +121,6 @@ class CustomerOrdersPage extends StatelessWidget {
                       ),
                       const Divider(),
                       const SizedBox(height: 5),
-
-                      // --- 🔢 🌟 අලුතින් එකතු කළ කොටස: Quantity & Unit Price ---
                       Row(
                         children: [
                           const Icon(
@@ -155,8 +154,6 @@ class CustomerOrdersPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-
-                      // --- 💵 🌟 අලුතින් එකතු කළ කොටස: Total Price ---
                       Row(
                         children: [
                           const Icon(
@@ -183,8 +180,6 @@ class CustomerOrdersPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-
-                      // --- 📞 Contact Number ---
                       Row(
                         children: [
                           const Icon(Icons.phone, color: Colors.grey, size: 18),
@@ -203,8 +198,6 @@ class CustomerOrdersPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-
-                      // --- 📍 Delivery Address ---
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -230,8 +223,6 @@ class CustomerOrdersPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-
-                      // --- 📅 Order Date & Time ---
                       Row(
                         children: [
                           const Icon(

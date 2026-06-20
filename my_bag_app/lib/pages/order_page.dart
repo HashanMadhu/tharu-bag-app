@@ -28,7 +28,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
   String _currentImageUrl = '';
   double _currentPrice = 0.0;
-  int _quantity = 1; // 💡 බෑග් ප්‍රමාණය තබා ගැනීමට (Default = 1)
+  int _quantity = 1; 
   bool _isInitialLoad = true;
 
   @override
@@ -56,7 +56,6 @@ class _OrderPageState extends ConsumerState<OrderPage> {
   @override
   Widget build(BuildContext context) {
     final selectedBagName = ref.watch(selectedBagProvider);
-    // 💡 මුළු මුදල ගණනය කිරීම (Price x Quantity)
     double totalPrice = _currentPrice * _quantity;
 
     return Scaffold(
@@ -76,7 +75,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // --- 🛠️ StreamBuilder හරහා Firestore Categories කියවීම ---
+                // --- StreamBuilder හරහා Firestore Categories කියවීම ---
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('categories')
@@ -100,10 +99,10 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                           String rawUrl = data['imageUrl'] ?? '';
                           _currentImageUrl =
                               (rawUrl.contains('ibb.co') &&
-                                  !rawUrl.endsWith('.jpg') &&
-                                  !rawUrl.endsWith('.png'))
-                              ? '$rawUrl/image.png'
-                              : rawUrl;
+                                      !rawUrl.endsWith('.jpg') &&
+                                      !rawUrl.endsWith('.png'))
+                                  ? '$rawUrl/image.png'
+                                  : rawUrl;
                           _currentPrice = (data['price'] ?? 0.0).toDouble();
                           break;
                         }
@@ -122,9 +121,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        top: 16.0,
-                      ), // 👈 උඩින් 16 ක ඉඩක් ලබා දුන්නා, එතකොට ලේබල් එක කැපෙන්නේ නැහැ
+                      padding: const EdgeInsets.only(top: 16.0), 
                       child: DropdownButtonFormField<String>(
                         isExpanded: true,
                         value: selectedDropdownValue,
@@ -138,9 +135,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                           return DropdownMenuItem<String>(
                             value: data['name'],
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 4.0,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: Text(
                                 "${data['name']} - Rs. ${data['price']}",
                                 maxLines: 2,
@@ -154,8 +149,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                           if (newBagName != null) {
                             final selectedDoc = docs.firstWhere(
                               (doc) =>
-                                  (doc.data()
-                                      as Map<String, dynamic>)['name'] ==
+                                  (doc.data() as Map<String, dynamic>)['name'] ==
                                   newBagName,
                             );
                             final selectedData =
@@ -167,10 +161,10 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                               String rawUrl = selectedData['imageUrl'] ?? '';
                               _currentImageUrl =
                                   (rawUrl.contains('ibb.co') &&
-                                      !rawUrl.endsWith('.jpg') &&
-                                      !rawUrl.endsWith('.png'))
-                                  ? '$rawUrl/image.png'
-                                  : rawUrl;
+                                          !rawUrl.endsWith('.jpg') &&
+                                          !rawUrl.endsWith('.png'))
+                                      ? '$rawUrl/image.png'
+                                      : rawUrl;
                               _currentPrice = (selectedData['price'] ?? 0.0)
                                   .toDouble();
                             });
@@ -179,118 +173,114 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                         validator: (value) =>
                             value == null ? 'Please select a bag type' : null,
                       ),
-                    ); // 👈 Padding නිමාව
+                    );
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                // --- 🛍️ Quantity (ප්‍රමාණය) තෝරන කොටස ---
-                if (selectedBagName.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Quantity:",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
+                // --- 🟢 සුරක්ෂිතව වෙනස් කළ Quantity සහ Price පෙන්වන කොටස ---
+                selectedBagName.isNotEmpty
+                    ? Column(
                         children: [
-                          // ➖ අඩු කරන බටන් එක
-                          IconButton(
-                            onPressed: _quantity > 1
-                                ? () => setState(() => _quantity--)
-                                : null,
-                            icon: const Icon(
-                              Icons.remove_circle_outline,
-                              color: Colors.brown,
-                              size: 30,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Quantity:",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: _quantity > 1
+                                        ? () => setState(() => _quantity--)
+                                        : null,
+                                    icon: const Icon(
+                                      Icons.remove_circle_outline,
+                                      color: Colors.brown,
+                                      size: 30,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Text(
+                                      '$_quantity',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => setState(() => _quantity++),
+                                    icon: const Icon(
+                                      Icons.add_circle_outline,
+                                      color: Colors.brown,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          // 🔢 ප්‍රමාණය පෙන්වන Text එක
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              '$_quantity',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(height: 15),
+                          Card(
+                            color: Colors.brown.shade50,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Total Amount:",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Rs. ${totalPrice.toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.brown,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          // ➕ වැඩි කරන බටන් එක
-                          IconButton(
-                            onPressed: () => setState(() => _quantity++),
-                            icon: const Icon(
-                              Icons.add_circle_outline,
-                              color: Colors.brown,
-                              size: 30,
-                            ),
-                          ),
                         ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-
-                  // --- 💵 මුළු මුදල (Total Price) පෙන්වන කොටස ---
-                  Card(
-                    color: Colors.brown.shade50,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Total Amount:",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            "Rs. ${totalPrice.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.brown,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                      )
+                    : const SizedBox.shrink(), // කිසිවක් නැති විට හිස්ව තැබීමට
 
                 const SizedBox(height: 20),
 
-                // --- 🖼️ පින්තූර සජීවීව පෙන්වන කොටස ---
-                // --- 🖼️ පින්තූර සජීවීව පෙන්වන කොටස ---
+                // --- පින්තූර සජීවීව පෙන්වන කොටස ---
                 Container(
                   height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.brown.shade200),
                     borderRadius: BorderRadius.circular(10),
-                    color: Colors
-                        .grey[50], // 💡 පින්තූරය contain වෙද්දී දෙපැත්තේ ඉතිරි වන ඉඩ මේ background එකෙන් වැහෙයි
+                    color: Colors.grey[50],
                   ),
                   child: _currentImageUrl.isNotEmpty
                       ? Image.network(
                           _currentImageUrl,
                           key: ValueKey(_currentImageUrl),
-                          fit: BoxFit
-                              .contain, // 👈 ❌ BoxFit.cover වෙනුවට BoxFit.contain දාන්න
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Center(
                               child: Icon(
@@ -308,7 +298,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                 const SizedBox(height: 30),
 
-                // --- 👤 Customer Name Field ---
+                // --- Customer Name Field ---
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
@@ -321,7 +311,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                 const SizedBox(height: 20),
 
-                // --- 📞 Mobile Number Field ---
+                // --- Mobile Number Field ---
                 TextFormField(
                   controller: _contactController,
                   keyboardType: TextInputType.phone,
@@ -335,7 +325,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                 const SizedBox(height: 20),
 
-                // --- 📍 Delivery Address Field ---
+                // --- Delivery Address Field ---
                 TextFormField(
                   controller: _addressController,
                   maxLines: 2,
@@ -354,7 +344,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
 
                 const SizedBox(height: 30),
 
-                // --- 🛒 Confirm Order Button ---
+                // --- Confirm Order Button ---
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -375,21 +365,15 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                             ),
                           );
 
-                          // 👑 2. Database (Firestore) එකට යන දත්ත වලට Quantity සහ Total Price එකතු කිරීම
                           final orderData = {
-                            'customerEmail':
-                                FirebaseAuth.instance.currentUser?.email ??
-                                'No Email',
+                            'uid': FirebaseAuth.instance.currentUser?.uid ?? '', 
+                            'customerEmail': FirebaseAuth.instance.currentUser?.email ?? 'No Email',
                             'customerName': _nameController.text.trim(),
                             'bagType': selectedBagName,
-                            'price': _currentPrice, // තනි බෑගයක මිල
-                            'quantity':
-                                _quantity, // 👈 දත්ත ගබඩාවට යන බෑග් ප්‍රමාණය
-                            'totalPrice':
-                                totalPrice, // 👈 දත්ත ගබඩාවට යන මුළු මුදල (Price x Quantity)
-                            'contact':
-                                int.tryParse(_contactController.text.trim()) ??
-                                0,
+                            'price': _currentPrice,
+                            'quantity': _quantity,
+                            'totalPrice': totalPrice,
+                            'contact': int.tryParse(_contactController.text.trim()) ?? 0,
                             'address': _addressController.text.trim(),
                             'orderDate': Timestamp.now(),
                             'status': 'Pending',
@@ -399,8 +383,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                               .collection('orders')
                               .add(orderData);
 
-                          if (context.mounted)
-                            Navigator.pop(context); // Loading close
+                          if (context.mounted) Navigator.pop(context); // Loading close
 
                           _showSuccessDialog();
 
@@ -411,9 +394,7 @@ class _OrderPageState extends ConsumerState<OrderPage> {
                                 builder: (context) => BillPage(
                                   customerName: _nameController.text,
                                   bagType: selectedBagName,
-                                  contact:
-                                      int.tryParse(_contactController.text) ??
-                                      0,
+                                  contact: int.tryParse(_contactController.text) ?? 0,
                                   address: _addressController.text,
                                   quantity: _quantity,
                                   totalPrice: totalPrice,
