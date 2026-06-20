@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_bag_app/pages/customer_orders_page.dart';
 import 'package:my_bag_app/pages/login_page.dart';
 import 'package:my_bag_app/pages/about_us_page.dart'; // 🎯 1. About Us පිටුවේ Import එක මෙතනට එකතු කළා
-
+import 'package:my_bag_app/pages/profile_page.dart'; // 💡 Profile Page එකේ Import එක මෙතනට එකතු කළා
 import '../../pages/order_page.dart';
 import '../../pages/home_page.dart';
 import '../../pages/admin_orders_page.dart';
@@ -72,6 +72,10 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               // 💡 Profile Page එක හැදුවාම මෙතන Navigate කරන්න පුළුවන්
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
             },
           ),
 
