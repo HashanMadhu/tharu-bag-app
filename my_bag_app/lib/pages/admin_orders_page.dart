@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/order_provider.dart';
+import '../services/pdf_service.dart';
 
 class AdminOrdersPage extends ConsumerWidget {
   const AdminOrdersPage({super.key});
@@ -326,6 +327,45 @@ class AdminOrdersPage extends ConsumerWidget {
                           ),
                           const SizedBox(height: 10),
                           const Divider(),
+
+                          // --- 📄 PDF Report Button ---
+                          // Center(
+                          //   child: ElevatedButton(
+                          //     onPressed: () {
+
+                          //       // Implement PDF report generation logic here
+                          //     },
+                          //     style: ElevatedButton.styleFrom(
+                          //       backgroundColor: Colors.brown,
+                          //       foregroundColor: Colors.white,
+                          //     ),
+                          //     child: const Text("PDF Report"),
+                          //   ),
+                          // ),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              // Firestore එකෙන් එන දත්ත ටික Map එකක් විදිහට Function එකට පාස් කරනවා
+                              Map<String, dynamic> orderData = {
+                                'name':
+                                    order['customerName'], // ඔයා Firestore එකේ දාලා තියෙන field names දාන්න
+                                'bagName': order['bagType'],
+                                'phone': order['contact'],
+                                'address': order['address'],
+                              };
+
+                              // PDF එක ජෙනරේට් කරන function එක call කිරීම
+                              await generateInvoice(orderData);
+                            },
+                            icon: const Icon(Icons.print, color: Colors.white),
+                            label: const Text(
+                              "Print Invoice",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.brown,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
 
                           // --- 🔄 Status Dropdown Editable Section ---
                           Row(
