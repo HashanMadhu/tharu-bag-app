@@ -351,6 +351,10 @@ class AdminOrdersPage extends ConsumerWidget {
                                 'bagName': order['bagType'],
                                 'phone': order['contact'],
                                 'address': order['address'],
+                                'quantity': order['quantity'],
+                                'price': order['price'],
+                                'totalPrice': order['totalPrice'],
+                                'orderDate': formattedDate,
                               };
 
                               // PDF එක ජෙනරේට් කරන function එක call කිරීම
