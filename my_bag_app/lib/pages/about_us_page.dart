@@ -1,7 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; // 🎯 WhatsApp open කිරීමට අවශ්‍යයි
 
 class AboutUsPage extends StatelessWidget {
   const AboutUsPage({super.key});
+
+  // 🎯 WhatsApp එකට පාරිභෝගිකයාව රැගෙන යන Function එක
+  Future<void> _launchWhatsApp() async {
+    // 💡 94XXXXXXXXX වෙනුවට ඔයාගේ සැබෑ WhatsApp අංකය දාන්න (උදා: 94712345678)
+    const String phoneNumber = "94742599932";
+    const String message =
+        "Hello Tharu Bag Center, මට බෑග් ඇණවුමක් පිළිබඳව විස්තර දැනගන්න අවශ්‍යයි.";
+
+    final Uri whatsappUri = Uri.parse(
+      "https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}",
+    );
+
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $whatsappUri';
+      }
+    } catch (e) {
+      print("Error opening WhatsApp: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +38,7 @@ class AboutUsPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ⛰️ ඉහළ Header කොටස (Logo එක හෝ ආයතනයේ නම සඳහා)
+            // ⛰️ 1. ඉහළ Header කොටස (Logo සහ ආයතනයේ නම)
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -62,7 +85,7 @@ class AboutUsPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 📝 ආයතනයේ විස්තර (Our Story)
+            // 📝 2. අපේ කතාව (Our Story Card)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Card(
@@ -108,7 +131,7 @@ class AboutUsPage extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            // 🎯 ප්‍රධාන අරමුණු (Features / Strengths)
+            // 🎯 3. අපගේ විශේෂත්වයන් (Features)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Card(
@@ -157,7 +180,7 @@ class AboutUsPage extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            // 📞 සම්බන්ධ කරගත හැකි තොරතුරු (Contact Info)
+            // 📞 4. සම්බන්ධ කරගත හැකි තොරතුරු සහ WhatsApp (Contact Us Card)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Card(
@@ -165,46 +188,77 @@ class AboutUsPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(20.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.contact_phone_outlined,
                             color: Colors.brown,
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
+                          // 💡 Overflow නොවීමට Expanded කර ඇත
                           Expanded(
-                            // 👈 මේ විදිහට Expanded එකක් ඇතුළට Text එක දාන්න
-                            child: const Text(
+                            child: Text(
                               "සම්බන්ධ කර ගැනීමට (Contact Us)",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.brown,
                               ),
-                              softWrap:
-                                  true, // 👈 ඉඩ මදි නම් Auto ඊළඟ පේළියට ගන්නවා
+                              softWrap: true,
                             ),
                           ),
                         ],
                       ),
-                      Divider(),
-                      SizedBox(height: 10),
-                      ListTile(
+                      const Divider(),
+                      const SizedBox(height: 10),
+
+                      // ලිපිනය
+                      const ListTile(
                         leading: Icon(Icons.location_on, color: Colors.brown),
                         title: Text("ලිපිනය"),
                         subtitle: Text("ලංකා බැංකුව ඉදිරිපිට , පොල්පිතිගම"),
                         contentPadding: EdgeInsets.zero,
                       ),
-                      ListTile(
+
+                      const SizedBox(height: 10),
+
+                      // දුරකථන අංකය
+                      const ListTile(
                         leading: Icon(Icons.phone, color: Colors.brown),
                         title: Text("දුරකථන අංකය"),
-                        subtitle: Text("076 259 9932"),
+                        subtitle: Text("+94 742 599 933"),
                         contentPadding: EdgeInsets.zero,
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // 🟢 මෙන්න WhatsApp බොත්තම (WhatsApp Button)
+                      ElevatedButton.icon(
+                        onPressed: _launchWhatsApp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                            0xFF25D366,
+                          ), // WhatsApp Green
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        icon: const Icon(Icons.chat, size: 22),
+                        label: const Text(
+                          "WhatsApp හරහා සම්බන්ධ වන්න",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -225,7 +279,7 @@ class AboutUsPage extends StatelessWidget {
   }
 }
 
-// 💡 Features පේළි සකස් කිරීමට පොදු Widget එකක්
+// Features පේළි සඳහා පොදු Widget එකක්
 class _FeatureRow extends StatelessWidget {
   final IconData icon;
   final String text;
