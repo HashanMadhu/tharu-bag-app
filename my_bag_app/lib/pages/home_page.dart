@@ -102,11 +102,15 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () async {
+              // 1. Firebase එකෙන් සාර්ථකව Logout වීම
               await AuthService().signOut();
+
               if (context.mounted) {
-                Navigator.pushReplacement(
-                  context,
+                // 2. 🎯 පරණ හැම ස්ක්‍රීන් එකක්ම සහ Cache මකලා ලොගින් පේජ් එකට යන්න
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (Route<dynamic> route) =>
+                      false, // මේකෙන් මුළු History එකම clear කරනවා
                 );
               }
             },
