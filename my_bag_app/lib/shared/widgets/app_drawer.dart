@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_bag_app/pages/customer_orders_page.dart';
 import 'package:my_bag_app/pages/login_page.dart';
-import 'package:my_bag_app/pages/about_us_page.dart'; // 🎯 1. About Us පිටුවේ Import එක මෙතනට එකතු කළා
-import 'package:my_bag_app/pages/profile_page.dart'; // 💡 Profile Page එකේ Import එක මෙතනට එකතු කළා
+import 'package:my_bag_app/pages/about_us_page.dart';
+import 'package:my_bag_app/pages/profile_page.dart';
 import '../../pages/order_page.dart';
 import '../../pages/home_page.dart';
 import '../../pages/admin_orders_page.dart';
@@ -71,7 +71,6 @@ class AppDrawer extends StatelessWidget {
             title: const Text('My Profile'),
             onTap: () {
               Navigator.pop(context);
-              // 💡 Profile Page එක හැදුවාම මෙතන Navigate කරන්න පුළුවන්
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilePage()),
@@ -107,31 +106,78 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          // FutureBuilder එකක් හරහා ඇඩ්මින් බොත්තම පාලනය කිරීම
+          // 🎯 FutureBuilder එකක් හරහා ඇඩ්මින් බොත්තම පාලනය කිරීම + StreamBuilder Badge
           FutureBuilder<bool>(
             future: _checkIsAdmin(),
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.data == true) {
-                return Column(
-                  children: [
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.admin_panel_settings,
-                        color: Colors.brown,
-                      ),
-                      title: const Text('ලැබුණු ඇණවුම් (Admin Only)'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AdminOrdersPage(),
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('orders')
+                      .where(
+                        'status',
+                        isEqualTo: 'Pending',
+                      ) // 🔔 අලුත් ඇණවුම් විතරක් ගණනය කරයි
+                      .snapshots(),
+                  builder: (context, orderSnapshot) {
+                    int pendingCount = 0;
+                    if (orderSnapshot.hasData) {
+                      pendingCount = orderSnapshot.data!.docs.length;
+                    }
+
+                    return Column(
+                      children: [
+                        const Divider(),
+                        ListTile(
+                          leading: Stack(
+                            children: [
+                              const Icon(
+                                Icons.admin_panel_settings,
+                                color: Colors.brown,
+                                size: 28,
+                              ),
+                              // 🔴 අලුත් ඕඩර්ස් තියෙනවා නම් විතරක් රතු Badge එක පෙන්වයි
+                              if (pendingCount > 0)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      '$pendingCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ],
+                          title: const Text('Received Orders'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AdminOrdersPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 );
               }
               return const SizedBox.shrink();
@@ -140,17 +186,15 @@ class AppDrawer extends StatelessWidget {
 
           const Divider(),
 
-          // ⭐ 2. About Us Button (යාවත්කාලීන කරන ලදී)
+          // About Us Button
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('About Us'),
             onTap: () {
-              Navigator.pop(context); // Drawer එක වහන්න
+              Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AboutUsPage(),
-                ), // 🎯 AboutUsPage එකට Navigate කිරීම
+                MaterialPageRoute(builder: (context) => const AboutUsPage()),
               );
             },
           ),
